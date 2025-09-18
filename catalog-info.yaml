@@ -6,7 +6,7 @@ spec:
 metadata:
   name: "nodejs-sample"
   annotations:
-    github.com/project-slug: "bcgov/nodejs-sample"
+    github.com/project-slug: "bcgov/r-nodejs-sample"
     playbook.io.nrs.gov.bc.ca/deployOnPrem: true
     playbook.io.nrs.gov.bc.ca/playbookPath: playbooks
     playbook.io.nrs.gov.bc.ca/useAltAppDirName: false
