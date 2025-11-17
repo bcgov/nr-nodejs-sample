@@ -16,6 +16,7 @@ metadata:
     playbook.io.nrs.gov.bc.ca/publishArtifactSuffix: dist node_modules package.json package-lock.json
     composer.io.nrs.gov.bc.ca/generators: gh-nodejs-build,backstage
     playbook.io.nrs.gov.bc.ca/unitTestsPath: ./.github/workflows/test.yaml
+    playbook.io.nrs.gov.bc.ca/postDeployTestsPath: ""
   description: NodeJS sample application
   title: NodeJS Sample
 apiVersion: backstage.io/v1alpha1

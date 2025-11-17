@@ -4,11 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      - 'main'
   pull_request:
     branches:
       - main
   workflow_dispatch:
-
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -26,6 +27,7 @@ jobs:
     permissions: {}
     secrets:
       token: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}
+      github_token: ${{ secrets.GITHUB_TOKEN }}
   test:
     name: Test
     uses: ./.github/workflows/test.yaml
@@ -50,7 +52,16 @@ jobs:
             RESPONSE=$(curl -s "https://api.github.com/repos/bcgov/nr-nodejs-sample/pulls?head=bcgov:${{ github.head_ref || github.ref_name }}&state=open&base=main" \
               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github+json")
-            PULL_REQUEST_NUMBER=$(echo ${RESPONSE} | jq -r .[0].number)
+            PULL_REQUEST_NUMBER=$(echo "${RESPONSE}" | jq -r .[0].number)
+            RESPONSE=$(curl -s "https://api.github.com/repos/bcgov/nr-nodejs-sample/pulls/$PULL_REQUEST_NUMBER" \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github+json")
+            MERGEABLE=$(echo "${RESPONSE}" | jq -r .mergeable)
+            if [[ "$MERGEABLE" != "true" ]]; then
+              echo "::error ::Pull request #$PULL_REQUEST_NUMBER is not mergeable… aborted."
+              echo "This can be resolved by resolving the merge conflict with the main branch."
+              exit 1
+            fi
             echo "checkout_ref=refs/pull/$PULL_REQUEST_NUMBER/merge" >> $GITHUB_OUTPUT
           else
             echo "checkout_ref=${{ github.ref_name }}" >> $GITHUB_OUTPUT

@@ -1,0 +1,60 @@
+name: Check Release Package
+
+on:
+  workflow_call:
+    secrets:
+      token:
+        description: "Token with repo read permissions"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  check-release-package:
+    name: Check if Release Package Exists
+    runs-on: ubuntu-latest
+
+    # Only run when the triggering ref is a TAG (means release publish)
+    if: ${{ github.ref_type == 'tag' }}
+
+    steps:
+      - name: Extract Version From Tag
+        id: tag
+        run: |
+          # github.ref looks like "refs/tags/v1.2.3"
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "version=$TAG" >> $GITHUB_OUTPUT
+          echo "Checking release tag: $TAG"
+
+      - name: Call GitHub API to check release
+        id: check
+        run: |
+          VERSION="${{ steps.tag.outputs.version }}"
+          echo "Checking release: $VERSION"
+
+          api="https://api.github.com/repos/${{ github.repository }}/releases/tags/$VERSION"
+
+          response=$(curl -s \
+            -H "Authorization: token ${{ secrets.token }}" \
+            "$api")
+
+          # Detect 404
+          if echo "$response" | grep -q '"Not Found"'; then
+            echo "Release $VERSION does NOT exist — safe to continue."
+            echo "exists=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Release found → check assets
+          assets_count=$(echo "$response" | jq '.assets | length')
+
+          if [ "$assets_count" -gt 0 ]; then
+            echo "::error::Release $VERSION already exists AND has assets! Cannot overwrite."
+            echo "exists=true" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          # Release exists but no assets
+          echo "Release $VERSION exists but contains NO assets — rebuild allowed."
+          echo "exists=false" >> $GITHUB_OUTPUT
