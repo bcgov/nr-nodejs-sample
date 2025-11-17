@@ -27,7 +27,7 @@ jobs:
     permissions: {}
     secrets:
       token: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}
-      github_token: ${{ secrets.GITHUB_TOKEN }}
+      gh_token: ${{ secrets.GITHUB_TOKEN }}
   test:
     name: Test
     uses: ./.github/workflows/test.yaml
