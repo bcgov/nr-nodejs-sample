@@ -2,15 +2,17 @@ name: Preflight
 
 on:
   workflow_call:
+    inputs:
+      project_name:
+        description: "The project name"
+        type: string
+      service_name:
+        description: "The service name"
+        type: string
     secrets:
       token:
         description: "The Broker token"
         required: true
-      gh_token:
-        description: "GitHub token with repo read permissions"
-        required: true
-permissions:
-  contents: read
 
 jobs:
   check-jwt:
@@ -22,6 +24,10 @@ jobs:
   check-release-package:
     name: Check release package
     uses: ./.github/workflows/check-release-package.yaml
+    with:
+      project_name: ${{ inputs.project_name }}
+      service_name: ${{ inputs.service_name }}
     secrets:
-      token: ${{ secrets.gh_token }}
+      token: ${{ secrets.token }}
+    if: ${{ github.ref_type == 'tag' }}
       

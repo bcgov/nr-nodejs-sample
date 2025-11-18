@@ -24,11 +24,12 @@ jobs:
   preflight:
     name: Preflight
     uses: ./.github/workflows/preflight.yaml
-    permissions: 
-      contents: read
+    with:
+      project_name: ${{ env.SERVICE_PROJECT }}
+      service_name: ${{ env.SERVICE_NAME }}
+    permissions: {}
     secrets:
       token: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}
-      gh_token: ${{ secrets.GITHUB_TOKEN }}
   test:
     name: Test
     uses: ./.github/workflows/test.yaml
