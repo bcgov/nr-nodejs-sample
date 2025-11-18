@@ -9,9 +9,11 @@ on:
         type: string
       project_name:
         description: "The project name"
+        default: oscar-example
         type: string
       service_name:
         description: "The service name"
+        default: nodejs-sample
         type: string
     secrets:
       token:
