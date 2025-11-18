@@ -21,13 +21,23 @@ env:
   SERVICE_NAME: nodejs-sample
 
 jobs:
-  preflight:
-    name: Preflight
-    uses: ./.github/workflows/preflight.yaml
-    with:
-      url: ${{ env.BROKER_URL }}
+  presetvars:
+    name: presetvars
+    runs-on: ubuntu-latest
+    outputs:
       project_name: ${{ env.SERVICE_PROJECT }}
       service_name: ${{ env.SERVICE_NAME }}
+    steps:
+      - name: Confirm variables set
+        run: echo "Variables set"
+
+  preflight:
+    name: Preflight
+    needs: presetvars
+    uses: ./.github/workflows/preflight.yaml
+    with:
+      project_name: ${{ needs.presetvars.outputs.project_name }}
+      service_name: ${{ needs.presetvars.outputs.service_name }}
     permissions: {}
     secrets:
       token: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}

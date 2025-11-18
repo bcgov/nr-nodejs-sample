@@ -3,9 +3,6 @@ name: Preflight
 on:
   workflow_call:
     inputs:
-      url:
-        description: "The Broker URL"
-        type: string
       project_name:
         description: "The project name"
         type: string
@@ -28,7 +25,6 @@ jobs:
     name: Check release package
     uses: ./.github/workflows/check-release-package.yaml
     with:
-      url: ${{ inputs.url }}
       project_name: ${{ inputs.project_name }}
       service_name: ${{ inputs.service_name }}
     secrets:
