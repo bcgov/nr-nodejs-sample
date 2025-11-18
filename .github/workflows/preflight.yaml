@@ -6,7 +6,11 @@ on:
       token:
         description: "The Broker token"
         required: true
-permissions: {}
+      gh_token:
+        description: "GitHub token with repo read permissions"
+        required: true
+permissions:
+  contents: read
 
 jobs:
   check-jwt:
@@ -14,3 +18,10 @@ jobs:
     uses: ./.github/workflows/check-token.yaml
     secrets:
       token: ${{ secrets.token }}
+  
+  check-release-package:
+    name: Check release package
+    uses: ./.github/workflows/check-release-package.yaml
+    secrets:
+      token: ${{ secrets.gh_token }}
+      
