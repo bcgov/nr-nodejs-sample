@@ -25,6 +25,7 @@ jobs:
     name: Preflight
     uses: ./.github/workflows/preflight.yaml
     with:
+      url: ${{ env.BROKER_URL }}
       project_name: ${{ env.SERVICE_PROJECT }}
       service_name: ${{ env.SERVICE_NAME }}
     permissions: {}
