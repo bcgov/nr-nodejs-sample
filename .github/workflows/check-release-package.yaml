@@ -43,8 +43,6 @@ jobs:
           PROJECT_NAME="${{ inputs.project_name }}"
           SERVICE_NAME="${{ inputs.service_name }}"
 
-          echo "Checking release $VERSION for project=$PROJECT service=$SERVICE status"
-
           # build JSON where clause (include package-build and version)
           WHERE_JSON=$(jq -n --arg act "package-build" \
                            --arg proj "$PROJECT_NAME" \
@@ -56,7 +54,6 @@ jobs:
           WHERE_ENC=$(printf '%s' "$WHERE_JSON" | jq -s -R -r @uri)
 
           QUERY_URL="${BROKER_URL}/v1/intention/search?where=${WHERE_ENC}&offset=0&limit=1"
-          echo "Query URL: $QUERY_URL"
 
           RESPONSE=$(curl -s -X POST "$QUERY_URL" \
             -H "accept: application/json" \
@@ -78,7 +75,7 @@ jobs:
           if [ "$OUTCOME" = "success" ]; then
             echo "Build is already successful. Stop rebuild!"
             echo "can_rebuild=false" >> $GITHUB_OUTPUT
-            exit 0
+            exit 1
           else
             echo "Build failed or outcome is not success. Will continue to rebuild..."
             echo "can_rebuild=true" >> $GITHUB_OUTPUT
