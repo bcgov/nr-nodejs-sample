@@ -26,4 +26,4 @@ jobs:
     uses: ./.github/workflows/check-release-package.yaml
     secrets:
       token: ${{ secrets.token }}
-    if: ${{ github.ref_type == 'tag' }} && ${{ inputs.release_check == true }}
+    if: ${{ github.ref_type == 'tag' && inputs.release_check == true }}
