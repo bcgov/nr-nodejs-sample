@@ -6,6 +6,13 @@ on:
       token:
         description: "The Broker token"
         required: true
+    inputs:
+      release_check:
+        description: "Whether to run the release package check"
+        required: false
+        default: false
+        type: boolean
+permissions: {}
 
 jobs:
   check-jwt:
@@ -13,11 +20,10 @@ jobs:
     uses: ./.github/workflows/check-token.yaml
     secrets:
       token: ${{ secrets.token }}
-  
+
   check-release-package:
     name: Check release package
     uses: ./.github/workflows/check-release-package.yaml
     secrets:
       token: ${{ secrets.token }}
-    if: ${{ github.ref_type == 'tag' }}
-      
+    if: ${{ github.ref_type == 'tag' && inputs.release_check == true }}
