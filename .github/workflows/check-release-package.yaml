@@ -19,6 +19,7 @@ on:
       token:
         description: "The Broker token"
         required: true
+permissions: {}
 
 jobs:
   check-release-package:
