@@ -37,6 +37,7 @@ jobs:
     name: Check build artifact
     uses: ./.github/workflows/check-build-artifact.yaml
     with:
+      build_workflow: ${{ inputs.build_workflow }}
       catalog_info: ${{ inputs.catalog_info }}
     if: inputs.preflight_context == 'deploy'
 
