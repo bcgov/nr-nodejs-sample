@@ -18,7 +18,7 @@ on:
         required: true
         type: string
       build_workflow:
-        description: 'Build workflow used to validate the build artifact.'
+        description: 'Build workflow used to validate the build artifact. (Required if preflight_context is deploy)'
         default: ''
         required: false
         type: string

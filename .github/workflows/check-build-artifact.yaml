@@ -39,6 +39,7 @@ jobs:
       - name: Check build artifact
         shell: bash
         run: |
+          CATALOG_FILE="${{ inputs.catalog_info }}"
           # Parse project (spec.system) and service (metadata.name) from the Backstage catalog-info YAML using yq
           PROJECT_NAME="$(yq e '.spec.system // ""' "$CATALOG_FILE" | tr -d '\r')"
           SERVICE_NAME="$(yq e '.metadata.name // ""' "$CATALOG_FILE" | tr -d '\r')"
