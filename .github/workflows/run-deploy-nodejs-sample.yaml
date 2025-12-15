@@ -26,12 +26,16 @@ jobs:
   preflight:
     name: Preflight
     uses: ./.github/workflows/preflight.yaml
+    with:
+      catalog_info: catalog-info.yaml
+      preflight_context: deploy
+      build_workflow: build-release-nodejs-sample.yaml
     secrets:
       token: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}
 
   deploy-development:
     name: Deploy to development
-    uses: ./.github/workflows/deploy.yaml
+    uses: ./.github/workflows/deploy-nodejs-sample.yaml
     needs: preflight
     with:
       environment: development
@@ -45,7 +49,7 @@ jobs:
   deploy-test:
     name: Deploy to test
     needs: deploy-development
-    uses: ./.github/workflows/deploy.yaml
+    uses: ./.github/workflows/deploy-nodejs-sample.yaml
     with:
       environment: test
       config_branch: ${{ github.event.inputs.config_branch }}
@@ -57,7 +61,7 @@ jobs:
   deploy-production:
     name: Deploy to production
     needs: deploy-test
-    uses: ./.github/workflows/deploy.yaml
+    uses: ./.github/workflows/deploy-nodejs-sample.yaml
     with:
       environment: production
       config_branch: ${{ github.event.inputs.config_branch }}
