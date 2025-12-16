@@ -164,13 +164,29 @@ jobs:
           ARTIFACT_SIZE: ${{ steps.publish-artifact.outputs.artifact_size }}
           BUILD_TOKEN: ${{ env.ACTION_TOKEN_BUILD }}
       - name: Close intention
+        id: close-intention
         if: ${{ success() && env.INTENTION_TOKEN != '' }}
         uses: bcgov-nr/action-broker-intention-close@v3
         with:
           intention_token: ${{ env.INTENTION_TOKEN }}
       - name: Close intention (Failure)
+        id: close-intention-failure
         if: ${{ failure() && env.INTENTION_TOKEN != '' }}
         uses: bcgov-nr/action-broker-intention-close@v3
         with:
           intention_token: ${{ env.INTENTION_TOKEN }}
           outcome: failure
+      - name: Build summary
+        if: always()
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | ${{ steps.set-version.outputs.project_version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Size | ${{ steps.publish-artifact.outputs.artifact_size }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SHA256 | ${{ steps.publish-artifact.outputs.artifact_sha256 }} |" >> $GITHUB_STEP_SUMMARY
+          AUDIT_URL="${{ steps.close-intention.outputs.audit-url }}${{ steps.close-intention-failure.outputs.audit-url }}"
+          if [[ -n "$AUDIT_URL" ]]; then
+            echo "Audit: $AUDIT_URL" >> $GITHUB_STEP_SUMMARY
+          fi
+
