@@ -20,7 +20,7 @@ env:
   SERVICE_NAME: nodejs-sample
   JOB: buildByToken/buildWithParameters?job=oscar-example/nodejs-sample
   URL: https://cd.io.nrs.gov.bc.ca
-  PACKAGE_REPO: ghcr.io/${{ github.repository }}/package
+  PACKAGE_REPO: ghcr.io/${{ github.repository }}/nodejs-sample
 
 jobs:
   deploy-pre-release-build:
