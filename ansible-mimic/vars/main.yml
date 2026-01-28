@@ -1,0 +1,1 @@
+cfg_broker_api_token: "{{ lookup('ansible.builtin.env', 'API_TOKEN') }}"

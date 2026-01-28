@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # The Tomcat Application (Built using the Multi-stage Dockerfile)
+  webapp:
+    build:
+      context: .
+      arg:
+        NODE_VERSION: ${NODE_VERSION}
+        TOMCAT_VERSION: ${TOMCAT_VERSION}
+    image: my-app-builder:latest # Explicitly name it here
+    container_name: webapp_container
+    stop_signal: SIGTERM
+    stop_grace_period: 15s
+    ports:
+      - "3000:3000" # NestJS API/Web
+      - "8080:8080" # Tomcat (empty but running)
+      - "2222:22"   # Ansible SSH    
+    networks:
+      - automation_net
+
+  # The Ansible Controller (The "Mimic")
+  ansible:
+    image: docker.io/willhallonline/ansible:latest
+    tty: true
+    container_name: ansible_controller
+    volumes:
+      - ./ansible-mimic:/ansible:Z
+      - ./playbooks/templates:/ansible/templates:Z
+    working_dir: /ansible
+    environment:
+      - ANSIBLE_HOST_KEY_CHECKING=False
+      - API_TOKEN=${API_TOKEN}
+    command: >
+      sh -c "pwd & ls -la . && sleep 5 && echo $API_TOKEN &&
+             ansible-playbook -i inventory.ini playbook.yaml"
+    networks:
+      - automation_net
+    depends_on:
+      - webapp
+
+networks:
+  automation_net:
+    driver: bridge

@@ -1,0 +1,28 @@
+- name: Mimic Local Configuration
+  hosts: webservers
+  vars_files:
+    - "vars/main.yml"
+
+  tasks:
+    - name: Verify Node Configuration Directory exists
+      stat:
+        path: /app/nest-app/config
+      register: node_config_dir
+
+    - name: Print status
+      debug:
+        msg: "Node Configuration Directory is present and ready for configuration!"
+      when: node_config_dir.stat.exists
+
+    - name: configure nonstandard files
+      template:
+        src: "templates/{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: "0775"
+      become: yes
+      become_user: root
+      with_items:
+      - {
+          src: "configuration.ts.j2",
+          dest: "/app/nest-app/config/configuration.js"
+        }
