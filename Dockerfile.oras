@@ -1,0 +1,15 @@
+ARG NODE_VERSION=22
+FROM node:${NODE_VERSION}
+
+ENV ORAS_VERSION=1.2.0
+RUN curl -LO https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz && \
+    tar -zxf oras_${ORAS_VERSION}_linux_amd64.tar.gz -C /usr/local/bin/ oras && \
+    rm oras_${ORAS_VERSION}_linux_amd64.tar.gz
+
+WORKDIR /app
+COPY entrypoint-oras.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+EXPOSE 8080 3000
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
