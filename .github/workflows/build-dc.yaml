@@ -29,8 +29,7 @@ jobs:
         uses: oras-project/setup-oras@v1
       - name: Create annotations files
         run: |
-          cat <<EOF > annotations.json
-
+          cat <<EOF > annotation.json
             "\$manifest": {
               "org.opencontainers.image.description": "Deployment configuration ${PROJECT_TAG}",
               "org.opencontainers.image.source": "${{ github.repositoryUrl }}",
