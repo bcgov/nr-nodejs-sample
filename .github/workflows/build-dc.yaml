@@ -30,6 +30,7 @@ jobs:
       - name: Create annotations files
         run: |
           cat <<EOF > annotation.json
+          {
             "\$manifest": {
               "org.opencontainers.image.description": "Deployment configuration ${PROJECT_TAG}",
               "org.opencontainers.image.source": "${{ github.repositoryUrl }}",
