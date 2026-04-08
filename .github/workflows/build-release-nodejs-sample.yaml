@@ -74,9 +74,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-            fetch-depth: 0
-            fetch-tags: true
-            ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
+          fetch-depth: 0
+          fetch-tags: true
+          ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
       - name: Setup ORAS
         uses: oras-project/setup-oras@v1
       - name: Set up Node
