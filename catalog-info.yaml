@@ -24,6 +24,7 @@ metadata:
     playbook.io.nrs.gov.bc.ca/toolsBuildSecrets: ""
     playbook.io.nrs.gov.bc.ca/toolsLocalBuildSecrets: ""
     playbook.io.nrs.gov.bc.ca/deployType: nodejs
+    playbook.io.nrs.gov.bc.ca/artifactSrc: repo
   description: NodeJS sample application
   title: NodeJS Sample
 apiVersion: backstage.io/v1alpha1
