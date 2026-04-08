@@ -6,9 +6,8 @@ on:
       environment:
         required: true
         type: string
-      config_branch:
-        description: 'Use branch for testing configuration changes'
-        required: false
+      deploy_tag:
+        required: true
         type: string
 
 concurrency:
@@ -65,6 +64,11 @@ jobs:
             echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
             echo "package_tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
+        env:
+          BROKER_URL: https://broker.io.nrs.gov.bc.ca
+          BROKER_JWT: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}
+          SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
+          SERVICE_NAME: ${{ env.SERVICE_NAME }}
       - name: Set build output
         id: set-build-output
         run: |
@@ -113,7 +117,7 @@ jobs:
             fetch-depth: 0
             fetch-tags: true
             ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
-      - name: Set nodejs package download URL
+      - name: Set package download URL
         id: set-download-url
         run: |
           DOWNLOAD_URL="${PACKAGE_REPO}:${PACKAGE_TAG}"
@@ -172,6 +176,7 @@ jobs:
           fi
           echo "project_tag=${TAG}" >> $GITHUB_OUTPUT
           echo "project_version=${PROJECT_VERSION}" >> $GITHUB_OUTPUT
+          echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
           echo "build_guid=$(echo ${RESPONSE} | jq -r '.data[].id')" >> $GITHUB_OUTPUT
           echo "build_number=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildNumber')" >> $GITHUB_OUTPUT
           echo "artifact_name=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].name')" >> $GITHUB_OUTPUT
@@ -187,7 +192,7 @@ jobs:
         with:
             fetch-depth: 0
             fetch-tags: true
-            ref: ${{ github.ref }}
+            ref: ${{ steps.set-tag-output.outputs.checkout_ref || github.ref }}
       - name: Set download URL
         id: set-download-url
         run: |
@@ -266,22 +271,24 @@ jobs:
             exit 1
           fi
 
+          DEPLOY_URL="ghcr.io/${{ github.repository }}/nodejs-sample/deployment-config:${{ inputs.deploy_tag }}"
+
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
           --data-urlencode "githubRunId=${{ github.run_id }}" \
           --data-urlencode "githubToken=${{ secrets.GITHUB_TOKEN }}" \
           --data-urlencode "brokerJwt=${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}" \
+          --data-urlencode "deployUrl=${DEPLOY_URL}" \
+          --data-urlencode "artifactUrl=${DOWNLOAD_URL}" \
+          --data-urlencode "artifactSrc=github" \
           --data-urlencode "artifactSha256=${ARTIFACT_SHA256}" \
+          --data-urlencode "catalogInfo=catalog-info.yaml" \
           --data-urlencode "projectVersion=${PROJECT_VERSION}" \
-          --data-urlencode "gitBranch=${{ github.ref_name }}" \
-          --data-urlencode "intentionId=${BUILD_GUID}" \
-          --data-urlencode "gitTag=${{ (startsWith(github.ref, 'refs/tags/') && github.ref_name) || '' }}" \
-          --data-urlencode "configBranch=${{ inputs.config_branch || '' }}" \
-          --data-urlencode "downloadUrl=${DOWNLOAD_URL}" \
-          --data-urlencode "downloadType=OCI" \
           --data-urlencode "envLong=${{ inputs.environment }}" \
+          --data-urlencode "gitBranch=${{ github.ref_name }}" \
           --data-urlencode "triggerUrl=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
           --data-urlencode "deploymentApprover=${DEPLOYMENT_APPROVER}" \
+          --data-urlencode "intentionId=${BUILD_GUID}" \
           -H "Connection: close" \
           ${{ env.URL }}/${{ env.JOB }}
         env:
