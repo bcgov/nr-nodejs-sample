@@ -74,11 +74,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
-          fetch-tags: true
-          ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
+            fetch-depth: 0
+            fetch-tags: true
+            ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
       - name: Setup ORAS
-        uses: oras-project/setup-oras@v1
+        uses: oras-project/setup-oras@v2
       - name: Set up Node
         uses: actions/setup-node@v6
         with:
@@ -179,7 +179,7 @@ jobs:
           oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/nodejs-sample:${PROJECT_TAG} dist node_modules package.json package-lock.json
           MANIFEST=$(cat ./manifest.json)
           echo $MANIFEST
-          echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers[] | select(.annotations["org.opencontainers.image.title"] == "dist") | .digest')" >> $GITHUB_OUTPUT
+          echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers | map(.digest) | join(",")' | sha256sum | awk '{print $1}')" >> $GITHUB_OUTPUT
           echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
         env:
           PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
@@ -189,7 +189,7 @@ jobs:
           curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
               -H 'Content-Type: application/json' \
               -H 'X-Broker-Token: '"${BUILD_TOKEN}"'' \
-              -d '{"package":{"checksum": "'${ARTIFACT_SHA256}'", "size": '${ARTIFACT_SIZE}'}}'
+              -d '{"package":{"checksum": "sha256:'${ARTIFACT_SHA256}'", "size": '${ARTIFACT_SIZE}'}}'
         env:
           ARTIFACT_SHA256: ${{ steps.publish-artifact.outputs.artifact_sha256 }}
           ARTIFACT_SIZE: ${{ steps.publish-artifact.outputs.artifact_size }}
