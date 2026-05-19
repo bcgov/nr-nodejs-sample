@@ -1,0 +1,27 @@
+name: Retain GHCR Package Versions
+
+on:
+  workflow_dispatch:
+
+jobs:
+  retain-packages:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package_name: nr-nodejs-sample/nodejs-sample
+            keep_versions: 10
+
+    steps:
+      - name: Delete old release versions (Keep ${{ matrix.keep_versions }})
+        uses: actions/delete-package-versions@v5
+        with:
+          owner: ${{ github.repository_owner }}
+          package-name: ${{ matrix.package_name }}
+          package-type: container
+          min-versions-to-keep: ${{ matrix.keep_versions }}

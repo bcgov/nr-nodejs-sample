@@ -11,32 +11,40 @@ jobs:
 
     permissions:
       packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        package_name:
+          - nr-nodejs-sample%2Fnodejs-sample
 
     steps:
-      - name: Set up branch-based tag
-        id: vars
-        run: |
-          REF_NAME="${{ github.event.pull_request.head.ref }}"
-          SAFE_REF_NAME=$(echo "$REF_NAME" | tr '/' '-')
-          echo "tag=${SAFE_REF_NAME}" >> "$GITHUB_OUTPUT"
-
       - name: Delete package version from GHCR
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           OWNER: ${{ github.repository_owner }}
-          PACKAGE_NAME: 'package'
-          TAG: ${{ steps.vars.outputs.tag }}
+          PACKAGE_NAME: ${{ matrix.package_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          # Find matching version ID
-          VERSION_ID=$(gh api -H "Accept: application/vnd.github+json" \
-            /users/$OWNER/packages/container/$PACKAGE_NAME/versions \
-            --paginate | jq -r --arg tag "$TAG" '.[] | select(.metadata.container.tags[]? == $tag) | .id')
+          set -euo pipefail
 
-          if [ -z "$VERSION_ID" ]; then
-            echo "❌ No version found with tag $TAG"
+          version_ids=$(gh api -H "Accept: application/vnd.github+json" \
+            /orgs/${OWNER}/packages/container/${PACKAGE_NAME}/versions \
+            --paginate \
+            --jq '.[] | select(
+              any(.metadata.container.tags[]?; 
+                test("(^|[-.])'"$PR_NUMBER"'([-.]|$)") 
+                and
+                (test("^[vd]?\\d+(\\.\\d+)*$") | not)
+              )
+            ) | .id' || true)
+
+          if [[ -z "${version_ids}" ]]; then
+            echo "No matching preview versions found for ${PACKAGE_NAME} and PR ${PR_NUMBER}"
             exit 0
           fi
 
-          echo "🗑 Deleting package version ID: $VERSION_ID"
-          gh api -X DELETE -H "Accept: application/vnd.github+json" \
-            /users/$OWNER/packages/container/$PACKAGE_NAME/versions/$VERSION_ID
+          for version_id in ${version_ids}; do
+            gh api \
+              --method DELETE -H "Accept: application/vnd.github+json" \
+              /orgs/${OWNER}/packages/container/${PACKAGE_NAME}/versions/${version_id}
+          done
