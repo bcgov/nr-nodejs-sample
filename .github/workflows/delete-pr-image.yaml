@@ -7,7 +7,6 @@ on:
 jobs:
   delete-ghcr-package:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.full_name == github.repository # Only run for PRs from same repo
 
     permissions:
       packages: write
