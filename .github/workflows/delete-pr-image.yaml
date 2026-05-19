@@ -34,7 +34,7 @@ jobs:
               any(.metadata.container.tags[]?; 
                 test("(^|[-.])'"$PR_NUMBER"'([-.]|$)") 
                 and
-                (test("^[vd]?\\d+(\\.\\d+)*$") | not)
+                (test("^'"$PR_NUMBER"'$|^[vVd]?\\d+(\\.\\d+)*$") | not)
               )
             ) | .id' || true)
 
