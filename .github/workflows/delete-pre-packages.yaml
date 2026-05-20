@@ -18,15 +18,6 @@ jobs:
             keep_versions: 10
 
     steps:
-      - name: Delete old release versions (Keep ${{ matrix.keep_versions }})
-        uses: actions/delete-package-versions@v5
-        with:
-          owner: ${{ github.repository_owner }}
-          package-name: ${{ matrix.package_name }}
-          package-type: container
-          min-versions-to-keep: ${{ matrix.keep_versions }}
-          ignore-versions: '^(?!v?\d+(\.\d+)*$).*$'
-
       - name: Delete old non-release versions (Keep ${{ matrix.keep_versions }})
         uses: actions/delete-package-versions@v5
         with:
@@ -34,4 +25,4 @@ jobs:
           package-name: ${{ matrix.package_name }}
           package-type: container
           min-versions-to-keep: ${{ matrix.keep_versions }}
-          ignore-versions: '^v?\d+(\.\d+)*$'
+          ignore-versions: '^(?:[vd])?\d+(?:\.\d+)*$'
