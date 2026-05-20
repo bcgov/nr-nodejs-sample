@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Delete package version from GHCR
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OWNER: ${{ github.repository_owner }}
           PACKAGE_NAME: ${{ matrix.package_name }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
