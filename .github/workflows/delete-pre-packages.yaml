@@ -1,4 +1,4 @@
-name: Retain GHCR Package Versions
+name: Retain GHCR Release Package Versions
 
 on:
   workflow_dispatch:

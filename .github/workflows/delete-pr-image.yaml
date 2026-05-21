@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         package_name:
-          - bcgov/nr-nodejs-sample/nodejs-sample
+          - nr-nodejs-sample/nodejs-sample
 
     steps:
       - name: Delete package version from GHCR
