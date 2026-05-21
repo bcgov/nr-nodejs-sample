@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         package_name:
-          - nr-nodejs-sample%2Fnodejs-sample
+          - bcgov/nr-nodejs-sample/nodejs-sample
 
     steps:
       - name: Delete package version from GHCR
@@ -26,9 +26,10 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
+          package_name_encoded="${PACKAGE_NAME//\//%2F}"
 
           version_ids=$(gh api -H "Accept: application/vnd.github+json" \
-            /orgs/${OWNER}/packages/container/${PACKAGE_NAME}/versions \
+            /orgs/${OWNER}/packages/container/${package_name_encoded}/versions \
             --paginate \
             --jq '.[] | select(
               any(.metadata.container.tags[]?; 
@@ -46,5 +47,5 @@ jobs:
           for version_id in ${version_ids}; do
             gh api \
               --method DELETE -H "Accept: application/vnd.github+json" \
-              /orgs/${OWNER}/packages/container/${PACKAGE_NAME}/versions/${version_id}
+              /orgs/${OWNER}/packages/container/${package_name_encoded}/versions/${version_id}
           done
