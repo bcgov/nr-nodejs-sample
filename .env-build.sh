@@ -19,6 +19,7 @@ fi
 export PROJECT_NAME="oscar-example"
 export SERVICE_NAME="nodejs-sample"
 export PACKAGE_REPO="https://maven.pkg.github.com/bcgov/nr-nodejs-sample"
+export PUBLISH_DIR="dist"
 
 
 export VERSION="${VERSION:-0.0.0-SNAPSHOT}"

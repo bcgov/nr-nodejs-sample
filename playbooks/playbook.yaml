@@ -27,8 +27,8 @@
     - role: oci_app
       vars:
         oci_app_runtime_install_dir: "{{ nodejs_install_dir }}"
-        oci_app_startup_command: "{{ oci_app_runtime_home }}/bin/node"
-        oci_app_startup_options: "dist/main.js"
+        oci_app_service_command: "{{ oci_app_runtime_home }}/bin/node"
+        oci_app_service_options: "dist/main.js"
 
   tasks:
     - ansible.builtin.stat:
@@ -55,5 +55,25 @@
     #   with_items:
     #   - {
     #       src: "configuration.ts.j2",
-    #       dest: "{{ oci_app_service_install_app_home }}/dist/src/config/configuration.js"
+    #       dest: "{{ nodejs_app_service_install_app_home }}/dist/src/config/configuration.js"
     #     }
+
+    - name: "java-maven-pipeline-example: Stop"
+      ansible.builtin.include_role:
+        name: service_control
+      vars:
+        service_control_action: 'stop'
+
+    - meta: flush_handlers
+
+    - name: "java-maven-pipeline-example: {{ polaris_control_handler }} setup"
+      ansible.builtin.include_role:
+        name: service_control
+      vars:
+        service_control_action: 'setup'
+
+    - name: "java-maven-pipeline-example: Start"
+      ansible.builtin.include_role:
+        name: service_control
+      vars:
+        service_control_action: 'start'
