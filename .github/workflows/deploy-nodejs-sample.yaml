@@ -113,7 +113,21 @@ jobs:
           echo "build_number=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildNumber')" >> $GITHUB_OUTPUT
           echo "build_version=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildVersion')" >> $GITHUB_OUTPUT
           echo "artifact_name=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].name')" >> $GITHUB_OUTPUT
-          artifact_checksum=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].checksum')
+          artifact_checksum=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].checksum // empty' | head -n 1)
+          if [[ -z "${artifact_checksum}" ]]; then
+            echo
+            echo "============================================================"
+            echo "Error: Broker returned an empty artifact checksum."
+            echo "------------------------------------------------------------"
+            echo "Build SHA: ${BUILD_SHA}"
+            echo "Why it matters: Jenkins checksum validation will always fail with an empty expected value."
+            echo "Check if the build workflow successfully patched package.checksum in Broker."
+            echo "--- Broker API response below ---"
+            echo "$RESPONSE"
+            echo "============================================================"
+            echo
+            exit 1
+          fi
           echo "artifact_sha256=${artifact_checksum#sha256:}" >> $GITHUB_OUTPUT
         env:
           BROKER_URL: https://broker.io.nrs.gov.bc.ca
@@ -197,7 +211,21 @@ jobs:
           echo "build_guid=$(echo ${RESPONSE} | jq -r '.data[].id')" >> $GITHUB_OUTPUT
           echo "build_number=$(echo ${RESPONSE} | jq -r '.data[].actions[].package.buildNumber')" >> $GITHUB_OUTPUT
           echo "artifact_name=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].name')" >> $GITHUB_OUTPUT
-          artifact_checksum=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].checksum')
+          artifact_checksum=$(echo ${RESPONSE} | jq -r '.data[].actions[].artifacts[].checksum // empty' | head -n 1)
+          if [[ -z "${artifact_checksum}" ]]; then
+            echo
+            echo "============================================================"
+            echo "Error: Broker returned an empty artifact checksum."
+            echo "------------------------------------------------------------"
+            echo "Project tag: ${TAG}"
+            echo "Why it matters: Jenkins checksum validation will always fail with an empty expected value."
+            echo "Check if the build workflow successfully patched package.checksum in Broker."
+            echo "--- Broker API response below ---"
+            echo "$RESPONSE"
+            echo "============================================================"
+            echo
+            exit 1
+          fi
           echo "artifact_sha256=${artifact_checksum#sha256:}" >> $GITHUB_OUTPUT
         env:
           BROKER_URL: https://broker.io.nrs.gov.bc.ca
