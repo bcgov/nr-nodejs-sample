@@ -52,13 +52,14 @@ jobs:
             exit 1
           fi
 
-          service_name="$(yq e '.metadata.name // ""' "$CATALOG_FILE" | tr -d '\r')"
+          project_slug="$(yq e '.metadata.annotations["github.com/project-slug"] // ""' "$CATALOG_FILE" | tr -d '\r')"
+          package_name="${project_slug##*/}"
           deploy_type="$(yq e '.metadata.annotations["playbook.io.nrs.gov.bc.ca/deployType"] // ""' "$CATALOG_FILE" | tr -d '\r')"
           deploy_config_path="$(yq e '.metadata.annotations["playbook.io.nrs.gov.bc.ca/deploymentConfigPaths"] // ""' "$CATALOG_FILE" | tr -d '\r')"
-          echo "service_name=$service_name" >> "$GITHUB_OUTPUT"
+          echo "package_name=$package_name" >> "$GITHUB_OUTPUT"
           echo "deploy_type=$deploy_type" >> "$GITHUB_OUTPUT"
           echo "deploy_config_path=$deploy_config_path" >> "$GITHUB_OUTPUT"
-          echo "Resolved service_name: $service_name"
+          echo "Resolved package_name: $package_name"
           echo "Resolved deploy_type: $deploy_type"
           echo "Resolved deploy_config_path: $deploy_config_path"
       - name: Create annotations files
@@ -94,7 +95,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
-          PACKAGE_NAME: ${{ steps.catalog-info.outputs.service_name }}/deployment-config
+          PACKAGE_NAME: ${{ steps.catalog-info.outputs.package_name }}/deployment-config
           REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
           ENCODED_PACKAGE_NAME="${PACKAGE_NAME//\//%2F}"
