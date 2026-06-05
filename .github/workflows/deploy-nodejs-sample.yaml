@@ -320,6 +320,13 @@ jobs:
           TRIGGER_UUID=$(uuidgen)
           echo "trigger_uuid=$TRIGGER_UUID" >> $GITHUB_OUTPUT
 
+          if [[ -n "${ARTIFACT_SHA256}" && ${#ARTIFACT_SHA256} -gt 20 ]]; then
+            MASKED_ARTIFACT_SHA256="${ARTIFACT_SHA256:0:12}...${ARTIFACT_SHA256: -8}"
+          else
+            MASKED_ARTIFACT_SHA256="${ARTIFACT_SHA256:-empty}"
+          fi
+          echo "Debug alignment BUILD_SHA=${BUILD_SHA} DOWNLOAD_URL=${DOWNLOAD_URL} ARTIFACT_SHA256(masked)=${MASKED_ARTIFACT_SHA256}"
+
           curl \
           --data-urlencode "token=${{ secrets.JENKINS_TOKEN }}" \
           --data-urlencode "githubRunId=${TRIGGER_UUID}" \
@@ -341,6 +348,7 @@ jobs:
           PROJECT_VERSION: ${{ needs.deploy-pre-release-build.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
           BUILD_GUID: ${{ needs.deploy-pre-release-build.outputs.build_guid || needs.deploy-release-build.outputs.build_guid }}
           BUILD_NUMBER: ${{ needs.deploy-pre-release-build.outputs.build_number || needs.deploy-release-build.outputs.build_number }}
+          BUILD_SHA: ${{ needs.deploy-pre-release-build.outputs.build_version || 'n/a' }}
           ARTIFACT_SHA256: ${{ needs.deploy-pre-release-build.outputs.artifact_sha256 || needs.deploy-release-build.outputs.artifact_sha256 }}
           DOWNLOAD_URL: ${{ needs.deploy-pre-release-build.outputs.download_url || needs.deploy-release-build.outputs.download_url }}
       - name: Display deployment job URL
