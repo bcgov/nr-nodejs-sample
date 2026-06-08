@@ -105,11 +105,6 @@ Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 This repository uses the Polaris Pipeline to build and deploy.
 
 
-### Management on Packages
-The Polaris Pipeline also generates jobs to manage unnecessary packages during developments period:
-- Delete PR package when PR merged
-- Only keep top {number} non-release packages
-
 Refer to [nr-polaris-docs](https://bcgov.github.io/nr-polaris-docs/#/) for more information about how to use the Polaris Pipeline.
 
 ## Resources
@@ -151,39 +146,6 @@ source env.sh local
 # Skip Vault authentication
 source env.sh build --skip-vault
 ```
-
-#### Setting the Artifact Version
-
-The `pom.xml` uses a `VERSION` environment variable and the `${revision}` property for the project version (see https://maven.apache.org/guides/mini/guide-maven-ci-friendly.html).
-
-A profile named `version-from-env` activates automatically when the `VERSION` environment variable is present and sets `${revision}` to its value.
-
-When the environment variable is absent, the POM uses the hardcoded value in the properties section.
-
-The Flatten Maven Plugin is used for install / deploy as described in the official Maven CI Friendly guide.
-
-| Context | Version resolved |
-|---|---|
-| **Local build — no env var, no env.sh** | Maven builds with version `UNSET` (clearly invalid, won't be mistaken for a real release) |
-| **Local build — after `source env.sh`** | `.env-build.sh` reads the base version from `VERSION` file (unless `VERSION` is already set in the shell) |
-| **CI/CD — branch or PR** | "Set VERSION" step computes `<base>-<pr-or-branch>-SNAPSHOT` and writes it to `$GITHUB_ENV`; `env.sh` sees it already set and skips the fallback |
-| **CI/CD — tag `v1.2.3`** | "Set VERSION" step strips the `v` prefix and writes `VERSION=1.2.3` to `$GITHUB_ENV` |
-
-To build with a specific version locally:
-
-```bash
-export VERSION=1.2.0-SNAPSHOT
-source env.sh build --skip-vault
-./mvnw clean package
-```
-
-Or as a one-liner (no shell modification):
-
-```bash
-VERSION=1.2.0-SNAPSHOT ./mvnw clean package
-```
-
-To bump the base development version, update only the `VERSION` file — `.env-build.sh` and the pipeline both derive from it automatically.
 
 <!-- Please add section showing how to build this application after the template marker -->
 
