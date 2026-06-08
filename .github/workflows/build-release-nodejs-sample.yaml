@@ -115,7 +115,7 @@ jobs:
           PACKAGE_BUILD_NUMBER: ${{ github.run_number }}
           PACKAGE_BUILD_VERSION: ${{ steps.set-build-output-parameters.outputs.git_commit }}
           PACKAGE_TYPE: application/vnd.oci.image.layer.v1.tar+gzip
-          PACKAGE_VERSION: ${{ steps.set-version.outputs.project_version }}
+          PACKAGE_VERSION: ${{ steps.set-build-output-parameters.outputs.project_version }}
       - name: Open intention
         uses: bcgov-nr/action-broker-intention-open@v2
         with:
@@ -163,7 +163,7 @@ jobs:
           }
           EOF
         env:
-          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+          PROJECT_TAG: ${{ steps.set-build-output-parameters.outputs.project_version }}
         working-directory: ./
       - name: Publish artifact
         id: publish-artifact
@@ -175,7 +175,7 @@ jobs:
           echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers | map(.digest) | join(",")' | sha256sum | awk '{print $1}')" >> $GITHUB_OUTPUT
           echo "artifact_size=$(echo $MANIFEST | jq -r '.layers | map(.size) | add')" >> $GITHUB_OUTPUT
         env:
-          PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
+          PROJECT_TAG: ${{ steps.set-build-output-parameters.outputs.project_version }}
         working-directory: ./
       - name: Send build info
         run: |
