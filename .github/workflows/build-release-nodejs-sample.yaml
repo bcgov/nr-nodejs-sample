@@ -19,6 +19,7 @@ env:
   BROKER_JWT: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}
   SERVICE_PROJECT: oscar-example
   SERVICE_NAME: nodejs-sample
+  DEFAULT_VERSION: ${{ vars.DEFAULT_VERSION || '0.0.0' }}-merge
 
 jobs:
   preflight:
@@ -98,6 +99,8 @@ jobs:
             APP_VERSION=${DEFAULT_VERSION/%-merge/-${{ steps.lookup-pr-merge-ref.outputs.version_modifier }}-merge}
           fi
           echo "VERSION=${APP_VERSION}" >> $GITHUB_ENV
+        env:
+          DEFAULT_VERSION: ${{ env.DEFAULT_VERSION }}
       - name: Set build output parameters
         id: set-build-output-parameters
         run: |
