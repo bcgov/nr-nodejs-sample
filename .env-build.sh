@@ -20,5 +20,6 @@ export PROJECT_NAME="oscar-example"
 export SERVICE_NAME="nodejs-sample"
 export PACKAGE_REPO="https://maven.pkg.github.com/bcgov/nr-nodejs-sample"
 
-
-export VERSION="${VERSION:-0.0.0-SNAPSHOT}"
+# Non-Maven build configuration (e.g. Node)
+DEFAULT_VERSION="$(jq -r '.version // empty' "$(dirname "${BASH_SOURCE[0]}")/package.json" 2>/dev/null)"
+export VERSION="${VERSION:-${DEFAULT_VERSION:-0.0.0}}"
