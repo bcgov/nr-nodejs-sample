@@ -63,7 +63,6 @@ jobs:
           else
             echo "build_sha=${{ github.sha }}" >> $GITHUB_OUTPUT
             echo "checkout_ref=${{ github.ref }}" >> $GITHUB_OUTPUT
-            echo "package_tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           fi
         env:
           BROKER_URL: https://broker.io.nrs.gov.bc.ca
