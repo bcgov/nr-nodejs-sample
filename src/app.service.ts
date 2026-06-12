@@ -56,7 +56,6 @@ export class AppService {
         // Event URL
         eventUrl = data.event?.url ?? 'unknown';
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       // handle error or log
     }
