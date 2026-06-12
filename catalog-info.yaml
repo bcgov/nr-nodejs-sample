@@ -2,7 +2,7 @@ spec:
   system: "oscar-example"
   type: website
   lifecycle: experimental
-  owner: ""
+  owner: "bcgov"
 metadata:
   name: "nodejs-sample"
   annotations:
