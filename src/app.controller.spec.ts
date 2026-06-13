@@ -17,8 +17,7 @@ describe('AppController', () => {
           useValue: createMock<AppService>(),
         },
       ],
-    })
-      .compile();
+    }).compile();
 
     appController = app.get<AppController>(AppController);
     appService = app.get<AppService>(AppService) as DeepMocked<AppService>;
