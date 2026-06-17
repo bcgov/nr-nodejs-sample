@@ -36,6 +36,9 @@ jobs:
   test:
     name: Test
     uses: ./.github/workflows/test.yaml
+    permissions:
+      contents: read
+      actions: read
   build-publish:
     name: Build and publish
     runs-on: ubuntu-latest
