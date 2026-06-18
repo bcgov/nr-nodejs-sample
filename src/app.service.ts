@@ -56,7 +56,6 @@ export class AppService {
     const safeUptime = this.escapeHtml(
       `${Math.floor(process.uptime() / 60)}m ${Math.floor(process.uptime() % 60)}s`,
     );
-    const safeHost = this.escapeHtml(process.env.HOSTNAME || 'local');
     const safeNow = this.escapeHtml(now.toLocaleString());
 
     const shortCommit =
@@ -193,7 +192,6 @@ export class AppService {
         <h2>Runtime</h2>
         <dl>
           <dt>Node</dt><dd>${safeNodeVersion}</dd>
-          <dt>Host</dt><dd>${safeHost}</dd>
           <dt>Uptime</dt><dd>${safeUptime}</dd>
           <dt>Now</dt><dd>${safeNow}</dd>
         </dl>
