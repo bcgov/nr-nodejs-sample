@@ -2,6 +2,39 @@
 
 This document explains the agent files created for the nr-nodejs-sample repository to enable automated security patch analysis aligned with BC Government OCIO patching guidelines.
 
+---
+
+## Quick Reference for All Audiences
+
+**Finding your starting point?** Use this table to locate the right file:
+
+| File | Purpose | Primary Audience |
+|------|---------|------------------|
+| **`docs/security/app-context.md`** | **READ THIS FIRST** — Deployment model, exposure (VPN-only), data sensitivity | Everyone analyzing CVEs |
+| **`docs/security/architecture.md`** | System design and trust boundaries | Security analysts, architects |
+| **`docs/security/threat-model.md`** | Known risks, assumptions, threat scenarios | Risk officers, compliance |
+| `.instructions.md` | Project rules (OCIO timelines, 3-factor risk model, output format) | Agents, developers, analysts |
+| `.agent.md` | Agent's job description and workflow | Agents, automation |
+| `.prompt.md` | Analysis templates with 3 worked examples and triage rubric | Copilot users, analysts |
+| `copilot-instructions.md` | Code patterns, patch workflow, Copilot-specific guidance | Developers using Copilot |
+
+### Key Concepts for Non-Technical Users
+
+- **VPN-only exposure**: This service is only accessible through the company VPN; not exposed to public internet.
+- **OCIO patch timelines**: CRITICAL = 72 hours, HIGH = 14 days, MEDIUM = 30 days, LOW = 1 year.
+- **Security context is primary evidence**: Files in `docs/security/` are authoritative; generic CVSS scores are not the final answer.
+- **Risk acceptance required**: If patch timelines cannot be met, approval and documentation are required.
+
+### Key Concepts for Technical Users
+
+- **Step 1.5 triage is mandatory**: Classify CVE into bucket 1–4 before scoring risk. Prevents misclassification.
+- **Use the 3-factor risk model**: `Risk = (Exploitability × 0.4) + (Exposure × 0.3) + (Criticality × 0.3)`.
+- **Always return 8-section output**: Application Overview → Vulnerability Summary → Scoring → Risk Calculation → OCIO Classification → Key Interpretation → Required Actions → Justification Statement.
+- **Read security context first**: Do not assume internet exposure without explicit evidence from `docs/security/app-context.md`.
+- **Reference worked examples**: CVE-2026-5079 in `.prompt.md` shows transitive dependency analysis pattern.
+
+---
+
 ## Files Created
 
 ### 1. `.instructions.md`
