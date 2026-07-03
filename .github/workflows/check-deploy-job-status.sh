@@ -16,7 +16,7 @@ LAST_CURL_EXIT="0"
 TRIGGER_ATTEMPTS=0
 COMPLETION_ATTEMPTS=0
 
-# Wait for the Jenkins deployment job to be triggered (max 90s)
+# Wait for the Jenkins deployment job to be triggered (max ~5m with current settings)
 for ((i=1; i<=MAX_WAIT; i++)); do
   TRIGGER_ATTEMPTS=$i
   RESPONSE_FILE=$(mktemp)
