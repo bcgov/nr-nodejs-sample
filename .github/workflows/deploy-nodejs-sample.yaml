@@ -404,6 +404,60 @@ jobs:
             STATUS_DETAIL="Final status: \`${{ steps.check-jenkins-job-status.outputs.status }}\`"
           fi
 
+          SUBMIT_HTTP="${{ steps.submit-job.outputs.submit_http_code || '' }}"
+          SUBMIT_CURL_EXIT="${{ steps.submit-job.outputs.submit_curl_exit_code || '' }}"
+          SUBMIT_DURATION="${{ steps.submit-job.outputs.submit_duration_seconds || '' }}"
+          if [[ -z "${SUBMIT_HTTP}" && -z "${SUBMIT_CURL_EXIT}" ]]; then
+            SUBMIT_SUMMARY="n/a"
+          elif [[ "${SUBMIT_CURL_EXIT}" == "28" ]]; then
+            SUBMIT_SUMMARY="timeout (curl exit 28)"
+          elif [[ "${SUBMIT_CURL_EXIT}" != "0" ]]; then
+            SUBMIT_SUMMARY="failed (curl exit ${SUBMIT_CURL_EXIT})"
+          elif [[ ! "${SUBMIT_HTTP}" =~ ^(2|3)[0-9][0-9]$ ]]; then
+            SUBMIT_SUMMARY="failed (HTTP ${SUBMIT_HTTP})"
+          else
+            if [[ "${SUBMIT_DURATION}" =~ ^[0-9]+$ ]]; then
+              SUBMIT_SUMMARY="ok (HTTP ${SUBMIT_HTTP}, ${SUBMIT_DURATION}s)"
+            else
+              SUBMIT_SUMMARY="ok (HTTP ${SUBMIT_HTTP})"
+            fi
+          fi
+
+          BROKER_FAILURE_REASON="${{ steps.check-jenkins-job-status.outputs.failure_reason || '' }}"
+          BROKER_STATUS="${{ steps.check-jenkins-job-status.outputs.status || '' }}"
+          BROKER_LAST_CURL_EXIT="${{ steps.check-jenkins-job-status.outputs.last_curl_exit || '' }}"
+          if [[ -n "${BROKER_FAILURE_REASON}" ]]; then
+            if [[ "${BROKER_LAST_CURL_EXIT}" == "28" ]]; then
+              BROKER_SUMMARY="timeout (curl exit 28)"
+            else
+              BROKER_SUMMARY="failed (${BROKER_FAILURE_REASON})"
+            fi
+          elif [[ "${BROKER_STATUS}" == "success" ]]; then
+            BROKER_SUMMARY="ok"
+          elif [[ -n "${BROKER_STATUS}" ]]; then
+            BROKER_SUMMARY="${BROKER_STATUS}"
+          else
+            BROKER_SUMMARY="n/a"
+          fi
+
+          if [[ "${SUBMIT_CURL_EXIT}" == "28" ]]; then
+            TIMEOUT_SIGNAL="yes (Jenkins submit)"
+            STATUS_MSG="⚠️ **Timeout**: Jenkins submit request timed out"
+            STATUS_DETAIL="> **Action Required**: Retry deployment. If this persists, check Jenkins/network availability."
+          elif [[ "${BROKER_LAST_CURL_EXIT}" == "28" ]]; then
+            TIMEOUT_SIGNAL="yes (Broker polling)"
+          else
+            TIMEOUT_SIGNAL="no"
+          fi
+
+          TRIGGER_WAIT="${{ steps.check-jenkins-job-status.outputs.trigger_wait_seconds || '' }}"
+          COMPLETION_WAIT="${{ steps.check-jenkins-job-status.outputs.completion_wait_seconds || '' }}"
+          if [[ "${TRIGGER_WAIT}" =~ ^[0-9]+$ && "${COMPLETION_WAIT}" =~ ^[0-9]+$ ]]; then
+            TOTAL_BROKER_WAIT="$((TRIGGER_WAIT + COMPLETION_WAIT))s"
+          else
+            TOTAL_BROKER_WAIT="n/a"
+          fi
+
           cat >> $GITHUB_STEP_SUMMARY << EOF
           # ${ENVIRONMENT^} Deployment Summary
 
@@ -414,14 +468,10 @@ jobs:
           | **Version** | ${PROJECT_VERSION} |
           | **Artifact SHA256** | ${ARTIFACT_SHA256} |
           | **Deployment Config Tag** | ${DEPLOY_CONFIG_TAG} |
-          | **Jenkins Submit HTTP** | ${{ steps.submit-job.outputs.submit_http_code || 'n/a' }} |
-          | **Jenkins Submit Curl Exit** | ${{ steps.submit-job.outputs.submit_curl_exit_code || 'n/a' }} |
-          | **Jenkins Submit Duration** | ${{ steps.submit-job.outputs.submit_duration_seconds || 'n/a' }}s |
-          | **Broker Poll Trigger Wait** | ${{ steps.check-jenkins-job-status.outputs.trigger_wait_seconds || 'n/a' }}s |
-          | **Broker Poll Complete Wait** | ${{ steps.check-jenkins-job-status.outputs.completion_wait_seconds || 'n/a' }}s |
-          | **Broker Poll Attempts** | trigger=${{ steps.check-jenkins-job-status.outputs.trigger_attempts || 'n/a' }}, completion=${{ steps.check-jenkins-job-status.outputs.completion_attempts || 'n/a' }} |
-          | **Broker Last HTTP** | ${{ steps.check-jenkins-job-status.outputs.last_http_code || 'n/a' }} |
-          | **Broker Last Curl Exit** | ${{ steps.check-jenkins-job-status.outputs.last_curl_exit || 'n/a' }} |
+          | **Jenkins Submit** | ${SUBMIT_SUMMARY} |
+          | **Broker Polling** | ${BROKER_SUMMARY} |
+          | **Broker Wait** | ${TOTAL_BROKER_WAIT} |
+          | **Timeout Detected** | ${TIMEOUT_SIGNAL} |
           $(if [[ -n "${{ steps.check-jenkins-job-status.outputs.event_url }}" ]]; then
             echo "| **Job Run** | [View Details](${{ steps.check-jenkins-job-status.outputs.event_url }}) |"
           else
