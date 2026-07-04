@@ -429,8 +429,22 @@ jobs:
           if [[ -n "${BROKER_FAILURE_REASON}" ]]; then
             if [[ "${BROKER_LAST_CURL_EXIT}" == "28" ]]; then
               BROKER_SUMMARY="timeout (curl exit 28)"
+            elif [[ "${BROKER_FAILURE_REASON}" == "broker_query_error_trigger" ]]; then
+              BROKER_SUMMARY="failed (trigger lookup request error)"
+            elif [[ "${BROKER_FAILURE_REASON}" == "broker_http_error_trigger" ]]; then
+              BROKER_SUMMARY="failed (trigger lookup HTTP error)"
+            elif [[ "${BROKER_FAILURE_REASON}" == "not_triggered_timeout" ]]; then
+              BROKER_SUMMARY="failed (trigger not found before timeout)"
+            elif [[ "${BROKER_FAILURE_REASON}" == "broker_query_error_completion" ]]; then
+              BROKER_SUMMARY="failed (completion polling request error)"
+            elif [[ "${BROKER_FAILURE_REASON}" == "broker_http_error_completion" ]]; then
+              BROKER_SUMMARY="failed (completion polling HTTP error)"
+            elif [[ "${BROKER_FAILURE_REASON}" == "not_completed_timeout" ]]; then
+              BROKER_SUMMARY="failed (deployment did not complete before timeout)"
+            elif [[ "${BROKER_FAILURE_REASON}" == "deployment_outcome_not_success" ]]; then
+              BROKER_SUMMARY="failed (deployment outcome was not success)"
             else
-              BROKER_SUMMARY="failed (${BROKER_FAILURE_REASON})"
+              BROKER_SUMMARY="failed"
             fi
           elif [[ "${BROKER_STATUS}" == "success" ]]; then
             BROKER_SUMMARY="ok"
