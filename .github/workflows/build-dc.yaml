@@ -57,7 +57,7 @@ jobs:
           broker_jwt: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}
           intention_path: intention.json
       - name: Start action nodejs-sample
-        uses: bcgov-nr/action-broker-action-start@a431673be3ed187d8c99d45effb34bfc3ff69645
+        uses: bcgov-nr/action-broker-action-start@v2.1.0
         with:
           action_token: 'ACTION_TOKEN_DCBUILD_0'
       - name: Setup ORAS
