@@ -52,7 +52,7 @@ jobs:
           PACKAGE_BUILD_VERSION: ${{ steps.set-build-output-parameters.outputs.git_commit }}
           PACKAGE_VERSION: ${{ steps.set-version.outputs.tag }}
       - name: Open intention
-        uses: bcgov-nr/action-broker-intention-open@v2
+        uses: bcgov-nr/action-broker-intention-open@a431673be3ed187d8c99d45effb34bfc3ff69645
         with:
           broker_jwt: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}
           intention_path: intention.json
