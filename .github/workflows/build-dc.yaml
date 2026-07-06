@@ -90,11 +90,15 @@ jobs:
               "org.opencontainers.image.description": "Deployment configuration ${PROJECT_TAG}",
               "org.opencontainers.image.source": "${{ github.repositoryUrl }}",
               "org.opencontainers.image.title": "deployment-config",
-              "org.opencontainers.image.version": "${PROJECT_TAG}"
+              "org.opencontainers.image.version": "${PROJECT_TAG}",
+              "broker.intention.id": "${INTENTION_ID}",
+              "broker.intention.url": "${{ env.BROKER_URL }}/v1/intention/${INTENTION_ID}",
+              "broker.intention.services": "nodejs-sample",
             }
           }
           EOF
         env:
+          INTENTION_ID: ${{ env.INTENTION_ID }}
           PROJECT_TAG: ${{ steps.set-version.outputs.tag }}
       - name: Push deployment config to registry
         id: publish-dc
