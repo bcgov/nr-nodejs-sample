@@ -62,7 +62,7 @@ jobs:
     needs: [preflight, find-tag]
     with:
       environment: development
-      deploy_tag: ${{ trim(github.event.inputs.deploy_tag) != '' && trim(github.event.inputs.deploy_tag) || needs.find-tag.outputs.deploy_tag }}
+      deploy_tag: ${{ github.event.inputs.deploy_tag != '' && github.event.inputs.deploy_tag || needs.find-tag.outputs.deploy_tag }}
     secrets: inherit
     if: |
       github.event.inputs.environment == 'development' ||
@@ -75,7 +75,7 @@ jobs:
     uses: ./.github/workflows/deploy-nodejs-sample.yaml
     with:
       environment: test
-      deploy_tag: ${{ trim(github.event.inputs.deploy_tag) != '' && trim(github.event.inputs.deploy_tag) || needs.find-tag.outputs.deploy_tag }}
+      deploy_tag: ${{ github.event.inputs.deploy_tag != '' && github.event.inputs.deploy_tag || needs.find-tag.outputs.deploy_tag }}
     secrets: inherit
     if: |
       github.event.inputs.environment == 'test' ||
@@ -87,6 +87,6 @@ jobs:
     uses: ./.github/workflows/deploy-nodejs-sample.yaml
     with:
       environment: production
-      deploy_tag: ${{ trim(github.event.inputs.deploy_tag) != '' && trim(github.event.inputs.deploy_tag) || needs.find-tag.outputs.deploy_tag }}
+      deploy_tag: ${{ github.event.inputs.deploy_tag != '' && github.event.inputs.deploy_tag || needs.find-tag.outputs.deploy_tag }}
     secrets: inherit
     if: github.event.inputs.environment == 'production'
