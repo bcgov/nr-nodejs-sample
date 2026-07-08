@@ -31,18 +31,26 @@ Evidence:
 
 Select one and explain:
 
-- External internet-facing: No [Confirmed]
-- Internal-only service: Yes, accessible only through VPN-connected internal access paths [Confirmed]
-- Hybrid exposure: No [Confirmed]
+- External internet-facing: Yes, production only [Confirmed]
+- Internal-only service: Yes, development and test only, accessible only through VPN-connected internal access paths [Confirmed]
+- Hybrid exposure: Yes [Confirmed]
 
-Initial classification for analysis: Internal-only service with VPN-restricted access; do not score as internet-facing [Confirmed].
+Initial classification for analysis: Hybrid exposure. Score production as internet-facing and development and test as VPN-restricted internal [Confirmed].
 
 ## Exposure Details
 
-- Public endpoint(s): None; service is not exposed to the public internet [Confirmed]
-- Access path: VPN-restricted internal access only [Confirmed]
-- Ingress controls (WAF/API gateway/LB): Not documented in repo [Confirmed-as-unknown]
-- Source network restrictions: VPN required [Confirmed]
+- Public endpoint(s):
+	- Production: Internet-exposed endpoint(s) [Confirmed]
+	- Development/test: No public endpoint exposure documented; internal access only [Confirmed]
+- Access path:
+	- Production: Public ingress path [Confirmed]
+	- Development/test: VPN-restricted internal access only [Confirmed]
+- Ingress controls (WAF/API gateway/LB):
+	- Production: Not documented in repo [Confirmed-as-unknown]
+	- Development/test: Not documented in repo [Confirmed-as-unknown]
+- Source network restrictions:
+	- Production: Not VPN-only [Confirmed]
+	- Development/test: VPN required [Confirmed]
 - East-west/internal reachable components: Not documented in repo [Confirmed-as-unknown]
 
 ## Data Sensitivity
@@ -90,7 +98,7 @@ Evidence:
 
 The following fields are required for high-confidence vulnerability exposure scoring and remain unknown:
 
-1. Ingress architecture and network restrictions beyond the confirmed VPN boundary
+1. Production ingress architecture and network controls (for example WAF/API gateway/load balancer)
 2. Data sensitivity and privacy classification
 3. Named service owner and risk acceptance authority
 
@@ -99,5 +107,6 @@ The following fields are required for high-confidence vulnerability exposure sco
 When analyzing CVEs:
 
 1. Use this file to score Exposure and Criticality.
-2. Do not assume internet exposure unless documented above.
-3. Distinguish external exposure from internal lateral movement risk.
+2. Do not assume all environments have the same exposure; use the environment-specific details documented above.
+3. Score production and development/test separately when exposure differs.
+4. Distinguish external exposure from internal lateral movement risk.
