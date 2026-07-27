@@ -12,7 +12,7 @@ metadata:
     playbook.io.nrs.gov.bc.ca/clientId: e985d455-b0ff-470b-8731-e004fcfac915
     license: Apache-2.0
     playbook.io.nrs.gov.bc.ca/publishArtifactSuffix: dist node_modules package.json package-lock.json
-    composer.io.nrs.gov.bc.ca/generators: gh-nodejs-build,backstage,nr-repository-composer,gh-oci-deploy-onprem
+    composer.io.nrs.gov.bc.ca/generators: gh-nodejs-build,backstage,nr-repository-composer,gh-oci-deploy-onprem,gh-polaris-composer-agent
     playbook.io.nrs.gov.bc.ca/unitTestsPath: ./.github/workflows/test.yaml
     playbook.io.nrs.gov.bc.ca/postDeployTestsPath: ""
     playbook.io.nrs.gov.bc.ca/deploymentConfigPaths: playbooks
