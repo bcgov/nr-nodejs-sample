@@ -1,22 +1,7 @@
 #!/bin/bash
 set -e
 
-# Use the timestamp from the previous step
-GH_TASK_START="${GH_TASK_START}"
-echo "Current GitHub task start: $GH_TASK_START"
-sleep 30
-MAX_WAIT=30
-SLEEP_INTERVAL=10
-
-TRIGGER_ID=$(echo -n "${SERVICE_NAME} ${TRIGGER_UUID}" | jq -sRr @uri)
-
-QUERY_URL="${BROKER_URL}/v1/intention/search?where=%7B%22event.trigger.id%22%3A%22${TRIGGER_ID}%22%7D&offset=0&limit=1"
-TRIGGER_PHASE_START=$(date +%s)
-LAST_HTTP_CODE="n/a"
-LAST_CURL_EXIT="0"
-TRIGGER_ATTEMPTS=0
-COMPLETION_ATTEMPTS=0
-
+# Helper function to set GitHub Actions outputs
 set_github_output() {
   if [[ -n "${1}" ]]; then
     echo "failure_reason=${1}" >> $GITHUB_OUTPUT
@@ -39,13 +24,29 @@ set_github_output() {
   fi
 }
 
-# Wait for the Jenkins deployment job to be triggered (max ~5m with current settings)
+# Use the timestamp from the previous step
+GH_TASK_START="${GH_TASK_START}"
+echo "Current GitHub task start: $GH_TASK_START"
+sleep 30
+MAX_WAIT=30
+
+TRIGGER_ID=$(echo -n "${SERVICE_NAME} ${TRIGGER_UUID}" | jq -sRr @uri)
+
+QUERY_URL="${BROKER_URL}/v1/intention/search?where=%7B%22event.trigger.id%22%3A%22${TRIGGER_ID}%22%7D&offset=0&limit=1"
+
+# Initialize tracking variables
+TRIGGER_ATTEMPTS=0
+COMPLETION_ATTEMPTS=0
+LAST_HTTP_CODE=""
+LAST_CURL_EXIT=""
+TRIGGER_START_TIME=$(date +%s)
+
+# Wait for the Jenkins deployment job to be triggered (Trigger Phase - max 5 minutes)
 for ((i=1; i<=MAX_WAIT; i++)); do
   TRIGGER_ATTEMPTS=$i
-  RESPONSE_FILE=$(mktemp)
-  set +e
-  LAST_HTTP_CODE=$(curl -sS -X 'POST' \
-    --output "${RESPONSE_FILE}" \
+  
+  RESPONSE=$(curl -sS -X 'POST' \
+    --output "/tmp/broker_trigger_response.json" \
     --write-out "%{http_code}" \
     --retry 1 \
     --retry-delay 1 \
@@ -54,59 +55,50 @@ for ((i=1; i<=MAX_WAIT; i++)); do
     "$QUERY_URL" \
     -H 'accept: application/json' \
     -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
-    -d '')
+    -d '' \
+  )
+  LAST_HTTP_CODE="$RESPONSE"
   LAST_CURL_EXIT=$?
-  set -e
-
-  RESPONSE=$(cat "${RESPONSE_FILE}")
-  rm -f "${RESPONSE_FILE}"
-
-  if [[ "${LAST_CURL_EXIT}" -ne 0 ]]; then
-    echo "Warning: Broker query failed (curl exit ${LAST_CURL_EXIT}) while waiting for trigger."
-    if [ $i -eq $MAX_WAIT ]; then
-      set_github_output "broker_query_error_trigger"
-      exit 1
-    fi
-    sleep $SLEEP_INTERVAL
-    continue
+  
+  if [ -f "/tmp/broker_trigger_response.json" ]; then
+    RESPONSE=$(cat "/tmp/broker_trigger_response.json")
+  else
+    RESPONSE=""
   fi
-
-  if [[ ! "${LAST_HTTP_CODE}" =~ ^2 ]]; then
-    echo "Warning: Broker returned HTTP ${LAST_HTTP_CODE} while waiting for trigger."
-    if [ $i -eq $MAX_WAIT ]; then
-      set_github_output "broker_http_error_trigger"
-      exit 1
-    fi
-    sleep $SLEEP_INTERVAL
-    continue
+  
+  if [ "$LAST_CURL_EXIT" -eq 28 ]; then
+    echo "Warning: Trigger phase polling timed out (curl exit code 28) on iteration $i/$MAX_WAIT."
+  elif [ "$LAST_CURL_EXIT" -ne 0 ] && [ "$LAST_CURL_EXIT" -ne 28 ]; then
+    echo "Warning: Trigger phase query failed with exit code $LAST_CURL_EXIT on iteration $i/$MAX_WAIT."
   fi
-
-  DATA_LENGTH=$(echo "$RESPONSE" | jq '.data | length')
+  
+  DATA_LENGTH=$(echo "$RESPONSE" | jq '.data | length' 2>/dev/null || echo 0)
 
   if [[ -z "$RESPONSE" || "$RESPONSE" == "null" || "$DATA_LENGTH" -eq 0 ]]; then
     if [ $i -eq $MAX_WAIT ]; then
-      echo "Error: Deployment job was not triggered from broker after $((MAX_WAIT*${SLEEP_INTERVAL})) seconds."
-      set_github_output "not_triggered_timeout"
+      TRIGGER_END_TIME=$(date +%s)
+      TRIGGER_WAIT_SECONDS=$((TRIGGER_END_TIME - TRIGGER_START_TIME))
+      set_github_output "Deployment job was not triggered from broker after $((MAX_WAIT*10)) seconds."
+      echo "Error: Deployment job was not triggered from broker after $((MAX_WAIT*10)) seconds."
       exit 1
     fi
     echo "Waiting for deployment job to be triggered..."
-    sleep $SLEEP_INTERVAL
+    sleep 10
     continue
   fi
   break
 done
 
-TRIGGER_PHASE_END=$(date +%s)
-TRIGGER_WAIT_SECONDS=$((TRIGGER_PHASE_END - TRIGGER_PHASE_START))
-COMPLETION_PHASE_START=$(date +%s)
+TRIGGER_END_TIME=$(date +%s)
+TRIGGER_WAIT_SECONDS=$((TRIGGER_END_TIME - TRIGGER_START_TIME))
 
-# Wait for the deployment job to be closed (completed)
+# Wait for the deployment job to be closed (Completion Phase - max 5 minutes)
+COMPLETION_START_TIME=$(date +%s)
 for ((i=1; i<=MAX_WAIT; i++)); do
   COMPLETION_ATTEMPTS=$i
-  RESPONSE_FILE=$(mktemp)
-  set +e
-  LAST_HTTP_CODE=$(curl -sS -X 'POST' \
-    --output "${RESPONSE_FILE}" \
+  
+  RESPONSE=$(curl -sS -X 'POST' \
+    --output "/tmp/broker_completion_response.json" \
     --write-out "%{http_code}" \
     --retry 1 \
     --retry-delay 1 \
@@ -115,49 +107,41 @@ for ((i=1; i<=MAX_WAIT; i++)); do
     "$QUERY_URL" \
     -H 'accept: application/json' \
     -H 'Authorization: Bearer '"${BROKER_JWT}"'' \
-    -d '')
+    -d '' \
+  )
+  LAST_HTTP_CODE="$RESPONSE"
   LAST_CURL_EXIT=$?
-  set -e
-
-  RESPONSE=$(cat "${RESPONSE_FILE}")
-  rm -f "${RESPONSE_FILE}"
-
-  if [[ "${LAST_CURL_EXIT}" -ne 0 ]]; then
-    echo "Warning: Broker query failed (curl exit ${LAST_CURL_EXIT}) while waiting for completion."
-    if [ $i -eq $MAX_WAIT ]; then
-      set_github_output "broker_query_error_completion"
-      exit 1
-    fi
-    sleep $SLEEP_INTERVAL
-    continue
+  
+  if [ -f "/tmp/broker_completion_response.json" ]; then
+    RESPONSE=$(cat "/tmp/broker_completion_response.json")
+  else
+    RESPONSE=""
   fi
-
-  if [[ ! "${LAST_HTTP_CODE}" =~ ^2 ]]; then
-    echo "Warning: Broker returned HTTP ${LAST_HTTP_CODE} while waiting for completion."
-    if [ $i -eq $MAX_WAIT ]; then
-      set_github_output "broker_http_error_completion"
-      exit 1
-    fi
-    sleep $SLEEP_INTERVAL
-    continue
+  
+  if [ "$LAST_CURL_EXIT" -eq 28 ]; then
+    echo "Warning: Completion phase polling timed out (curl exit code 28) on iteration $i/$MAX_WAIT."
+  elif [ "$LAST_CURL_EXIT" -ne 0 ] && [ "$LAST_CURL_EXIT" -ne 28 ]; then
+    echo "Warning: Completion phase query failed with exit code $LAST_CURL_EXIT on iteration $i/$MAX_WAIT."
   fi
-
-  CLOSED=$(echo "$RESPONSE" | jq -r '.data[0].closed // false')
+  
+  CLOSED=$(echo "$RESPONSE" | jq -r '.data[0].closed // false' 2>/dev/null || echo "false")
   if [[ "$CLOSED" == "true" ]]; then
     echo "Deployment job is closed."
     break
   fi
   if [ $i -eq $MAX_WAIT ]; then
-    echo "Error: Deployment job could not complete within $((MAX_WAIT*${SLEEP_INTERVAL})) seconds."
-    set_github_output "not_completed_timeout"
+    COMPLETION_END_TIME=$(date +%s)
+    COMPLETION_WAIT_SECONDS=$((COMPLETION_END_TIME - COMPLETION_START_TIME))
+    set_github_output "Deployment job could not complete within $((MAX_WAIT*10)) seconds (Completion Phase Timeout)."
+    echo "Error: Deployment job could not complete within $((MAX_WAIT*10)) seconds (Completion Phase Timeout)."
     exit 1
   fi
-  echo "Deployment job still running... waiting ${SLEEP_INTERVAL}s"
-  sleep $SLEEP_INTERVAL
+  echo "Deployment job still running... waiting 10s"
+  sleep 10
 done
 
-COMPLETION_PHASE_END=$(date +%s)
-COMPLETION_WAIT_SECONDS=$((COMPLETION_PHASE_END - COMPLETION_PHASE_START))
+COMPLETION_END_TIME=$(date +%s)
+COMPLETION_WAIT_SECONDS=$((COMPLETION_END_TIME - COMPLETION_START_TIME))
 
 # Extract and display the event URL
 EVENT_URL=$(echo "$RESPONSE" | jq -r '.data[0].event.url // empty')
@@ -170,9 +154,10 @@ fi
 # Check the outcome
 STATUS=$(echo "$RESPONSE" | jq -r '.data[0].transaction.outcome // empty')
 if [[ "$STATUS" != "success" ]]; then
-  set_github_output "deployment_outcome_not_success"
   echo "Deployment outcome is not success: $STATUS"
+  set_github_output "Deployment outcome is not success: $STATUS"
   exit 1
 fi
 
+# Success - set outputs
 set_github_output
