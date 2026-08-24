@@ -319,7 +319,7 @@ jobs:
           --data-urlencode "deployUrl=${DEPLOY_URL}" \
           --data-urlencode "deployRoot=" \
           --data-urlencode "artifactUrl=${DOWNLOAD_URL}" \
-          --data-urlencode "artifactSrc=github" \
+          --data-urlencode "artifactSrc=repo" \
           --data-urlencode "artifactSha256=${ARTIFACT_SHA256}" \
           --data-urlencode "projectVersion=${PROJECT_VERSION}" \
           --data-urlencode "envLong=${{ inputs.environment }}" \
