@@ -82,6 +82,8 @@ jobs:
           echo "project_version=${VERSION}" >> $GITHUB_OUTPUT
           echo "git_commit=$(git rev-parse --verify HEAD)" >> $GITHUB_OUTPUT
           echo "build_guid=uuid::$(uuidgen)" >> $GITHUB_OUTPUT
+        env:
+          VERSION: ${{ steps.version-detect.outputs.version }}
       - name: Build intention
         run: sh ./.github/workflows/build-intention-nodejs-sample.sh
         env:
@@ -113,6 +115,8 @@ jobs:
           source ./env.sh build ./ --skip-vault
           cd ./
           npm run build --if-present
+        env:
+          VERSION: ${{ steps.version-detect.outputs.version }}
         working-directory: ./
       - name: Validate dist directory
         run: |
