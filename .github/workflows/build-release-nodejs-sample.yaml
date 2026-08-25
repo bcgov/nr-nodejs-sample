@@ -75,12 +75,6 @@ jobs:
           cache-dependency-path: ./
           node-version: 24
           cache: 'npm'
-      - name: Set version
-        id: set-version
-        run: |
-          echo "VERSION=${APP_VERSION}" >> $GITHUB_ENV
-        env:
-          APP_VERSION: ${{ steps.composite-build-setup.outputs.version }}
       - name: Set build output parameters
         id: set-build-output-parameters
         run: |
