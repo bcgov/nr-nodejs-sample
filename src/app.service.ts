@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PROJECT_NAME, SERVICE_NAME } from './constants';
+import { TaskRecord, TasksService } from './tasks/tasks.service';
 
 @Injectable()
 export class AppService {
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private tasksService: TasksService,
+  ) {}
 
   private escapeHtml(value: string): string {
     return value
@@ -197,6 +201,69 @@ export class AppService {
         </dl>
       </article>
     </section>
+  </main>
+</body>
+</html>`;
+  }
+
+  getTasksPage(): string {
+    const tasks = this.tasksService.getTasks();
+    const safeProject = this.escapeHtml(process.env.PROJECT_NAME || PROJECT_NAME);
+    const overdueCount = tasks.filter((task) => task.isOverdue).length;
+    const rows = tasks
+      .map((task) => {
+        const status = task.isOverdue ? `Overdue by ${task.daysOverdue} day(s)` : 'On schedule';
+        const safeStatus = this.escapeHtml(status);
+        return `
+          <tr class="${task.isOverdue ? 'overdue' : ''}">
+            <td><strong>${this.escapeHtml(task.title)}</strong><br><span>${this.escapeHtml(task.description)}</span></td>
+            <td>${this.escapeHtml(task.dueDate || 'unknown')}</td>
+            <td>${this.escapeHtml(task.last_completed || 'never')}</td>
+            <td><span class="status">${safeStatus}</span></td>
+          </tr>`;
+      })
+      .join('');
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Team OSCAR Maintenance Tasks</title>
+  <style>
+    :root { color-scheme: light; --ink: #17212b; --muted: #61707d; --line: #d5dee4; --paper: #fff; --accent: #0b6878; --danger: #a33a32; --danger-bg: #fff0ed; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; min-height: 100vh; color: var(--ink); background: linear-gradient(145deg, #e8f1ef, #f7f3e9); font-family: "IBM Plex Sans", "Segoe UI", sans-serif; }
+    main { max-width: 1180px; margin: 0 auto; }
+    header { margin-bottom: 20px; }
+    h1 { margin: 0; font-family: "IBM Plex Serif", Georgia, serif; font-size: clamp(1.8rem, 4vw, 2.8rem); }
+    header p { color: var(--muted); margin: 8px 0 0; }
+    .summary { display: inline-block; margin-top: 16px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--muted); font-size: .9rem; }
+    .table-wrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 12px 30px rgba(23, 33, 43, .1); }
+    table { width: 100%; border-collapse: collapse; min-width: 720px; }
+    th, td { padding: 15px 16px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); background: #f5f8f7; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    td span { color: var(--muted); font-size: .9rem; }
+    .overdue { background: var(--danger-bg); }
+    .overdue .status { color: var(--danger); font-weight: 700; }
+    .status { color: var(--accent); font-weight: 600; white-space: nowrap; }
+    @media (max-width: 600px) { body { padding: 16px; } th, td { padding: 12px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Team OSCAR Maintenance Tasks</h1>
+      <p>Recurring operational work and its current due status.</p>
+      <span class="summary">${overdueCount} overdue of ${tasks.length} task(s)</span>
+    </header>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Task</th><th>Due date</th><th>Last completed</th><th>Status</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="4">No maintenance tasks configured.</td></tr>'}</tbody>
+      </table>
+    </div>
   </main>
 </body>
 </html>`;

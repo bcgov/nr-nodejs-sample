@@ -1,0 +1,34 @@
+- id: opensearch-upgrade-capacity
+  title: OpenSearch upgrades and capacity checks
+  description: Review OpenSearch upgrade readiness and confirm capacity remains appropriate for current and forecast workloads.
+  cadence_days: 30
+  last_completed: '2026-08-01'
+  last_checked: '2026-08-25'
+
+- id: vault-upgrade
+  title: HashiCorp Vault upgrades
+  description: Review and apply HashiCorp Vault upgrades according to the supported-version and change-management process.
+  cadence_days: 60
+  last_completed: '2026-07-30'
+  last_checked: '2026-08-25'
+
+- id: nr-broker-dependencies
+  title: NR Broker dependency updates
+  description: Review and apply dependency updates for NR Broker, including compatibility and security considerations.
+  cadence_days: 30
+  last_completed: '2026-06-15'
+  last_checked: '2026-08-25'
+
+- id: fluent-bit-upgrade
+  title: Fluent Bit upgrades
+  description: Review and apply Fluent Bit upgrades, then confirm logging continues to flow correctly after the change.
+  cadence_days: 60
+  last_completed: '2026-08-18'
+  last_checked: '2026-08-25'
+
+- id: nr-broker-token-rotation
+  title: NR Broker token rotation
+  description: Rotate NR Broker tokens and verify dependent services continue authenticating successfully.
+  cadence_days: 90
+  last_completed: '2026-08-22'
+  last_checked: '2026-08-25'

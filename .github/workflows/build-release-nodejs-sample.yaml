@@ -175,7 +175,7 @@ jobs:
         id: publish-artifact
         run: |
           oras login ghcr.io -u ${{ github.actor }} --password-stdin <<< ${{ secrets.GITHUB_TOKEN }}
-          oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/nodejs-sample:${PROJECT_TAG} dist node_modules package.json package-lock.json
+          oras push --annotation-file annotation.json --export-manifest manifest.json ghcr.io/${{ github.repository }}/nodejs-sample:${PROJECT_TAG} dist node_modules ops package.json package-lock.json
           MANIFEST=$(cat ./manifest.json)
           echo $MANIFEST
           echo "artifact_sha256=$(echo $MANIFEST | jq -r '.layers | map(.digest) | join(",")' | sha256sum | awk '{print $1}')" >> $GITHUB_OUTPUT

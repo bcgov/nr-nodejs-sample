@@ -29,4 +29,12 @@ describe('AppController', () => {
       expect(await appController.getHello()).toBe('Hello World!');
     });
   });
+
+  describe('tasks', () => {
+    it('should return the maintenance task list page', async () => {
+      appService.getTasksPage.mockReturnValue('<html><body>Maintenance Tasks</body></html>');
+
+      expect(await appController.getTasksPage()).toBe('<html><body>Maintenance Tasks</body></html>');
+    });
+  });
 });

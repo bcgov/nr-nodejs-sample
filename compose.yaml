@@ -1,0 +1,11 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      ENVIRONMENT: local
+      PROJECT_NAME: oscar-example
+      SERVICE_NAME: nodejs-sample
+    volumes:
+      - ./ops/tasks.yaml:/app/ops/tasks.yaml:ro

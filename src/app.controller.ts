@@ -13,6 +13,11 @@ export class AppController {
     };
   }
 
+  @Get('tasks')
+  getTasksPage(): string {
+    return this.appService.getTasksPage();
+  }
+
   @Get()
   async getHello(): Promise<string> {
     try {
