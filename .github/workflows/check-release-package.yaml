@@ -14,7 +14,7 @@ on:
         required: false
     outputs:
       can_rebuild:
-        value: ${{ jobs.check-release-package.outputs.can_rebuild }}
+        value: ${{ jobs.check-broker-release.outputs.can_rebuild }}
     secrets:
       token:
         description: "The Broker token"
@@ -27,7 +27,9 @@ jobs:
     name: Check if Release Package Exists
     runs-on: ubuntu-latest
     outputs:
-      can_rebuild: ${{ steps.check.outputs.can_rebuild }}
+      version: ${{ steps.tag.outputs.version }}
+      project_name: ${{ steps.catalog.outputs.project_name }}
+      service_name: ${{ steps.catalog.outputs.service_name }}
     steps:
       - name: Checkout only catalog-info.yaml
         uses: actions/checkout@v6
@@ -56,13 +58,10 @@ jobs:
           TAG="${GITHUB_REF#refs/tags/}"
           VERSION="${TAG#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Call Broker API to check release
-        id: check
+      
+      - name: Extract From Catalog
+        id: catalog
         run: |
-          VERSION="${{ steps.tag.outputs.version }}"
-          echo "Checking release: $VERSION"
-          BROKER_URL="${{ inputs.url }}"
           CATALOG_FILE="${{ inputs.catalog_info }}"
           # Parse project (spec.system) and service (metadata.name) from the Backstage catalog-info YAML using yq
           PROJECT_NAME="$(yq e '.spec.system // ""' "$CATALOG_FILE" | tr -d '\r')"
@@ -72,6 +71,27 @@ jobs:
             echo "Failed to parse project or service name from $CATALOG_FILE (spec.system=${PROJECT_NAME:-<empty>}, metadata.name=${SERVICE_NAME:-<empty>})"
             exit 1
           fi
+          echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
+          echo "service_name=$SERVICE_NAME" >> $GITHUB_OUTPUT
+
+
+  check-broker-release:
+    name: Check Broker Release
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
+    needs: check-release-package
+    outputs:
+      can_rebuild: ${{ steps.check.outputs.can_rebuild }}
+    steps:
+      - name: Call Broker API to check release
+        id: check
+        env:
+          VERSION: ${{ needs.check-release-package.outputs.version }}
+          PROJECT_NAME: ${{ needs.check-release-package.outputs.project_name }}
+          SERVICE_NAME: ${{ needs.check-release-package.outputs.service_name }}
+        run: |
+          echo "Checking release: $VERSION"
+          BROKER_URL="${{ inputs.url }}"
 
           # build JSON where clause (include package-build and version)
           WHERE_JSON=$(jq -n --arg act "package-build" \
