@@ -58,7 +58,7 @@ jobs:
           TAG="${GITHUB_REF#refs/tags/}"
           VERSION="${TAG#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-      
+
       - name: Extract From Catalog
         id: catalog
         run: |
