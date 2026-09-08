@@ -22,24 +22,14 @@ env:
   PACKAGE_REPO: ghcr.io/${{ github.repository }}/nodejs-sample
 
 jobs:
-  deploy-pre-release-build:
-    name: Trigger ${{ inputs.environment }} deployment
+  lookup-pr-merge-ref:
+    name: Lookup PR Merge Ref
     if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
     permissions:
-      contents: read
-      packages: read
       pull-requests: read
     outputs:
-      project_version: ${{ steps.set-build-output.outputs.project_version }}
-      build_guid: ${{ steps.set-build-output.outputs.build_guid }}
-      build_number: ${{ steps.set-build-output.outputs.build_number }}
-      artifact_name: ${{ steps.set-build-output.outputs.artifact_name }}
-      artifact_sha256: ${{ steps.set-build-output.outputs.artifact_sha256 }}
-      download_url: ${{ steps.set-download-url.outputs.download_url }}
       checkout_ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
-      build_version: ${{ steps.set-build-output.outputs.build_version }}
     steps:
       - name: Lookup PR Merge Ref
         id: lookup-pr-merge-ref
@@ -69,6 +59,20 @@ jobs:
           BROKER_JWT: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
+  set-pre-release-build-output:
+    name: Set build output
+    if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
+    needs: lookup-pr-merge-ref
+    outputs:
+      project_version: ${{ steps.set-build-output.outputs.project_version }}
+      build_guid: ${{ steps.set-build-output.outputs.build_guid }}
+      build_number: ${{ steps.set-build-output.outputs.build_number }}
+      artifact_name: ${{ steps.set-build-output.outputs.artifact_name }}
+      artifact_sha256: ${{ steps.set-build-output.outputs.artifact_sha256 }}
+      build_version: ${{ steps.set-build-output.outputs.build_version }}
+    steps:
       - name: Set build output
         id: set-build-output
         run: |
@@ -122,13 +126,24 @@ jobs:
           BROKER_JWT: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
-          BUILD_SHA: ${{ steps.lookup-pr-merge-ref.outputs.build_sha }}
+          BUILD_SHA: ${{ needs.lookup-pr-merge-ref.outputs.build_sha }}
+  deploy-pre-release-build:
+    name: Trigger ${{ inputs.environment }} deployment
+    if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+    needs: [lookup-pr-merge-ref, set-pre-release-build-output]
+    outputs:
+      download_url: ${{ steps.set-download-url.outputs.download_url }}
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
             fetch-depth: 0
             fetch-tags: true
-            ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
+            ref: ${{ needs.lookup-pr-merge-ref.outputs.checkout_ref }}
       - name: Set package download URL
         id: set-download-url
         run: |
@@ -136,7 +151,7 @@ jobs:
           echo "${DOWNLOAD_URL}"
           echo "download_url=$(echo ${DOWNLOAD_URL})" >> $GITHUB_OUTPUT
         env:
-          PACKAGE_TAG: ${{ steps.lookup-pr-merge-ref.outputs.package_tag || steps.set-build-output.outputs.project_version }}
+          PACKAGE_TAG: ${{ needs.lookup-pr-merge-ref.outputs.package_tag || needs.set-pre-release-build-output.outputs.project_version }}
           PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
   deploy-release-build:
     name: Trigger deployment
