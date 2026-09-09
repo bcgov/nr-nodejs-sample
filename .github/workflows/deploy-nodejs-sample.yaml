@@ -269,12 +269,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # See: https://github.com/bcgov/nr-polaris-pipelines
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-            fetch-depth: 0
-            fetch-tags: true
-            ref: ${{ github.ref }}
       - name: Get deployment approver
         id: get-deployment-approver
         run: |
@@ -323,6 +317,12 @@ jobs:
     runs-on:
       group: Larger Runners - OpenShift Static-IP
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+            fetch-depth: 0
+            fetch-tags: true
+            ref: ${{ github.ref }}
       - name: Submit deployment job
         id: submit-job
         run: |
