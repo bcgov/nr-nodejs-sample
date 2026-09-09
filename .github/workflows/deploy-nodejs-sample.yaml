@@ -22,24 +22,15 @@ env:
   PACKAGE_REPO: ghcr.io/${{ github.repository }}/nodejs-sample
 
 jobs:
-  deploy-pre-release-build:
-    name: Trigger ${{ inputs.environment }} deployment
+  lookup-pr-merge-ref:
+    name: Lookup PR Merge Ref
     if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
     permissions:
-      contents: read
-      packages: read
       pull-requests: read
     outputs:
-      project_version: ${{ steps.set-build-output.outputs.project_version }}
-      build_guid: ${{ steps.set-build-output.outputs.build_guid }}
-      build_number: ${{ steps.set-build-output.outputs.build_number }}
-      artifact_name: ${{ steps.set-build-output.outputs.artifact_name }}
-      artifact_sha256: ${{ steps.set-build-output.outputs.artifact_sha256 }}
-      download_url: ${{ steps.set-download-url.outputs.download_url }}
+      build_sha: ${{ steps.lookup-pr-merge-ref.outputs.build_sha }}
       checkout_ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
-      build_version: ${{ steps.set-build-output.outputs.build_version }}
     steps:
       - name: Lookup PR Merge Ref
         id: lookup-pr-merge-ref
@@ -69,6 +60,20 @@ jobs:
           BROKER_JWT: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
+  set-pre-release-build-output:
+    name: Set build output
+    if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
+    needs: lookup-pr-merge-ref
+    outputs:
+      project_version: ${{ steps.set-build-output.outputs.project_version }}
+      build_guid: ${{ steps.set-build-output.outputs.build_guid }}
+      build_number: ${{ steps.set-build-output.outputs.build_number }}
+      artifact_name: ${{ steps.set-build-output.outputs.artifact_name }}
+      artifact_sha256: ${{ steps.set-build-output.outputs.artifact_sha256 }}
+      build_version: ${{ steps.set-build-output.outputs.build_version }}
+    steps:
       - name: Set build output
         id: set-build-output
         run: |
@@ -122,13 +127,24 @@ jobs:
           BROKER_JWT: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
-          BUILD_SHA: ${{ steps.lookup-pr-merge-ref.outputs.build_sha }}
+          BUILD_SHA: ${{ needs.lookup-pr-merge-ref.outputs.build_sha }}
+  deploy-pre-release-build:
+    name: Trigger ${{ inputs.environment }} deployment
+    if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+    needs: [lookup-pr-merge-ref, set-pre-release-build-output]
+    outputs:
+      download_url: ${{ steps.set-download-url.outputs.download_url }}
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
             fetch-depth: 0
             fetch-tags: true
-            ref: ${{ steps.lookup-pr-merge-ref.outputs.checkout_ref }}
+            ref: ${{ needs.lookup-pr-merge-ref.outputs.checkout_ref }}
       - name: Set package download URL
         id: set-download-url
         run: |
@@ -136,23 +152,20 @@ jobs:
           echo "${DOWNLOAD_URL}"
           echo "download_url=$(echo ${DOWNLOAD_URL})" >> $GITHUB_OUTPUT
         env:
-          PACKAGE_TAG: ${{ steps.lookup-pr-merge-ref.outputs.package_tag || steps.set-build-output.outputs.project_version }}
+          PACKAGE_TAG: ${{ needs.set-pre-release-build-output.outputs.project_version }}
           PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
-  deploy-release-build:
-    name: Trigger deployment
+  set-release-build-output:
+    name: Set build output
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     environment: ${{ inputs.environment }}
-    permissions:
-      contents: read
-      packages: read
     outputs:
       project_version: ${{ steps.set-tag-output.outputs.project_version }}
       build_guid: ${{ steps.set-tag-output.outputs.build_guid }}
       build_number: ${{ steps.set-tag-output.outputs.build_number }}
       artifact_name: ${{ steps.set-tag-output.outputs.artifact_name }}
       artifact_sha256: ${{ steps.set-tag-output.outputs.artifact_sha256 }}
-      download_url: ${{ steps.set-download-url.outputs.download_url }}
       checkout_ref: ${{ steps.set-tag-output.outputs.checkout_ref }}
       build_version: ${{ steps.set-tag-output.outputs.build_version }}
     steps:
@@ -213,12 +226,23 @@ jobs:
           BROKER_JWT: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
+  deploy-release-build:
+    name: Trigger deployment
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+    outputs:
+      download_url: ${{ steps.set-download-url.outputs.download_url }}
+    needs: set-release-build-output
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
             fetch-depth: 0
             fetch-tags: true
-            ref: ${{ steps.set-tag-output.outputs.checkout_ref || github.ref }}
+            ref: ${{ needs.set-release-build-output.outputs.checkout_ref || github.ref }}
       - name: Set download URL
         id: set-download-url
         run: |
@@ -226,15 +250,18 @@ jobs:
           echo "${DOWNLOAD_URL}"
           echo "download_url=$(echo ${DOWNLOAD_URL})" >> $GITHUB_OUTPUT
         env:
-          PACKAGE_TAG: ${{ steps.set-tag-output.outputs.project_version }}
+          PACKAGE_TAG: ${{ needs.set-release-build-output.outputs.project_version }}
           PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
-  submit-deployment-job:
-    name: Submit deployment job
+  set-deployment-job-output:
+    name: Set deployment job output
     if: |
       always() &&
       ((needs.deploy-pre-release-build.result == 'success' && needs.deploy-release-build.result == 'skipped') ||
       (needs.deploy-pre-release-build.result == 'skipped' && needs.deploy-release-build.result == 'success'))
-    needs: [deploy-pre-release-build, deploy-release-build]
+    needs: [set-pre-release-build-output, deploy-pre-release-build,
+            set-release-build-output, deploy-release-build]
+    outputs:
+      approver_id: ${{ steps.get-deployment-approver.outputs.approver_id }}
     permissions:
       actions: read
       packages: read
@@ -242,12 +269,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # See: https://github.com/bcgov/nr-polaris-pipelines
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-            fetch-depth: 0
-            fetch-tags: true
-            ref: ${{ github.ref }}
       - name: Get deployment approver
         id: get-deployment-approver
         run: |
@@ -282,6 +303,26 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ github.token }}
+  submit-deployment-job:
+    name: Submit deployment job
+    if: |
+      always() &&
+      ((needs.deploy-pre-release-build.result == 'success' && needs.deploy-release-build.result == 'skipped') ||
+      (needs.deploy-pre-release-build.result == 'skipped' && needs.deploy-release-build.result == 'success'))
+    needs: [set-pre-release-build-output, deploy-pre-release-build,
+            set-release-build-output, deploy-release-build,
+            set-deployment-job-output]
+    permissions:
+      contents: read
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+            fetch-depth: 0
+            fetch-tags: true
+            ref: ${{ github.ref }}
       - name: Submit deployment job
         id: submit-job
         run: |
@@ -290,8 +331,8 @@ jobs:
           echo "gh_task_start=$GH_TASK_START" >> $GITHUB_OUTPUT
 
           # Require DEPLOYMENT_APPROVER in guid@GitHub format
-          if [[ -n "${{ steps.get-deployment-approver.outputs.approver_id }}" ]]; then
-            DEPLOYMENT_APPROVER="${{ steps.get-deployment-approver.outputs.approver_id }}"
+          if [[ -n "${{ needs.set-deployment-job-output.outputs.approver_id }}" ]]; then
+            DEPLOYMENT_APPROVER="${{ needs.set-deployment-job-output.outputs.approver_id }}"
           else
             echo "Error: No deployment approver found. Failing deployment."
             exit 1
@@ -360,10 +401,10 @@ jobs:
 
           rm -f "${JENKINS_RESPONSE_FILE}"
         env:
-          PROJECT_VERSION: ${{ needs.deploy-pre-release-build.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
-          BUILD_GUID: ${{ needs.deploy-pre-release-build.outputs.build_guid || needs.deploy-release-build.outputs.build_guid }}
-          BUILD_NUMBER: ${{ needs.deploy-pre-release-build.outputs.build_number || needs.deploy-release-build.outputs.build_number }}
-          ARTIFACT_SHA256: ${{ needs.deploy-pre-release-build.outputs.artifact_sha256 || needs.deploy-release-build.outputs.artifact_sha256 }}
+          PROJECT_VERSION: ${{ needs.set-pre-release-build-output.outputs.project_version || needs.set-release-build-output.outputs.project_version }}
+          BUILD_GUID: ${{ needs.set-pre-release-build-output.outputs.build_guid || needs.set-release-build-output.outputs.build_guid }}
+          BUILD_NUMBER: ${{ needs.set-pre-release-build-output.outputs.build_number || needs.set-release-build-output.outputs.build_number }}
+          ARTIFACT_SHA256: ${{ needs.set-pre-release-build-output.outputs.artifact_sha256 || needs.set-release-build-output.outputs.artifact_sha256 }}
           DOWNLOAD_URL: ${{ needs.deploy-pre-release-build.outputs.download_url || needs.deploy-release-build.outputs.download_url }}
       - name: Display deployment job URL
         run: |
@@ -501,9 +542,9 @@ jobs:
           EOF
         env:
           ENVIRONMENT: ${{ inputs.environment }}
-          DEPLOY_REF: ${{ needs.deploy-pre-release-build.outputs.checkout_ref || github.ref }}
-          COMMIT_HASH: ${{ needs.deploy-pre-release-build.outputs.build_version || needs.deploy-release-build.outputs.build_version }}
-          PROJECT_VERSION: ${{ needs.deploy-pre-release-build.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
-          ARTIFACT_SHA256: ${{ needs.deploy-pre-release-build.outputs.artifact_sha256 || needs.deploy-release-build.outputs.artifact_sha256 }}
+          DEPLOY_REF: ${{ needs.set-pre-release-build-output.outputs.checkout_ref || github.ref }}
+          COMMIT_HASH: ${{ needs.set-pre-release-build-output.outputs.build_version || needs.set-release-build-output.outputs.build_version }}
+          PROJECT_VERSION: ${{ needs.set-pre-release-build-output.outputs.project_version || needs.set-release-build-output.outputs.project_version }}
+          ARTIFACT_SHA256: ${{ needs.set-pre-release-build-output.outputs.artifact_sha256 || needs.set-release-build-output.outputs.artifact_sha256 }}
           DEPLOY_CONFIG_TAG: ${{ inputs.deploy_tag }}
 
