@@ -252,14 +252,16 @@ jobs:
         env:
           PACKAGE_TAG: ${{ needs.set-release-build-output.outputs.project_version }}
           PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
-  submit-deployment-job:
-    name: Submit deployment job
+  set-deployment-job-output:
+    name: Set deployment job output
     if: |
       always() &&
       ((needs.deploy-pre-release-build.result == 'success' && needs.deploy-release-build.result == 'skipped') ||
       (needs.deploy-pre-release-build.result == 'skipped' && needs.deploy-release-build.result == 'success'))
     needs: [set-pre-release-build-output, deploy-pre-release-build,
             set-release-build-output, deploy-release-build]
+    outputs:
+      approver_id: ${{ steps.get-deployment-approver.outputs.approver_id }}
     permissions:
       actions: read
       packages: read
@@ -307,6 +309,20 @@ jobs:
           fi
         env:
           GH_TOKEN: ${{ github.token }}
+  submit-deployment-job:
+    name: Submit deployment job
+    if: |
+      always() &&
+      ((needs.deploy-pre-release-build.result == 'success' && needs.deploy-release-build.result == 'skipped') ||
+      (needs.deploy-pre-release-build.result == 'skipped' && needs.deploy-release-build.result == 'success'))
+    needs: [set-pre-release-build-output, deploy-pre-release-build,
+            set-release-build-output, deploy-release-build,
+            set-deployment-job-output]
+    permissions:
+      contents: read
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
+    steps:
       - name: Submit deployment job
         id: submit-job
         run: |
@@ -315,8 +331,8 @@ jobs:
           echo "gh_task_start=$GH_TASK_START" >> $GITHUB_OUTPUT
 
           # Require DEPLOYMENT_APPROVER in guid@GitHub format
-          if [[ -n "${{ steps.get-deployment-approver.outputs.approver_id }}" ]]; then
-            DEPLOYMENT_APPROVER="${{ steps.get-deployment-approver.outputs.approver_id }}"
+          if [[ -n "${{ needs.set-deployment-job-output.outputs.approver_id }}" ]]; then
+            DEPLOYMENT_APPROVER="${{ needs.set-deployment-job-output.outputs.approver_id }}"
           else
             echo "Error: No deployment approver found. Failing deployment."
             exit 1
