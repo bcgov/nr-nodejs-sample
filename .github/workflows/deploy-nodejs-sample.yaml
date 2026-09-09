@@ -250,7 +250,7 @@ jobs:
       always() &&
       ((needs.deploy-pre-release-build.result == 'success' && needs.deploy-release-build.result == 'skipped') ||
       (needs.deploy-pre-release-build.result == 'skipped' && needs.deploy-release-build.result == 'success'))
-    needs: [deploy-pre-release-build, deploy-release-build]
+    needs: [set-pre-release-build-output, deploy-pre-release-build, deploy-release-build]
     permissions:
       actions: read
       packages: read
@@ -376,10 +376,10 @@ jobs:
 
           rm -f "${JENKINS_RESPONSE_FILE}"
         env:
-          PROJECT_VERSION: ${{ needs.deploy-pre-release-build.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
-          BUILD_GUID: ${{ needs.deploy-pre-release-build.outputs.build_guid || needs.deploy-release-build.outputs.build_guid }}
-          BUILD_NUMBER: ${{ needs.deploy-pre-release-build.outputs.build_number || needs.deploy-release-build.outputs.build_number }}
-          ARTIFACT_SHA256: ${{ needs.deploy-pre-release-build.outputs.artifact_sha256 || needs.deploy-release-build.outputs.artifact_sha256 }}
+          PROJECT_VERSION: ${{ needs.set-pre-release-build-output.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
+          BUILD_GUID: ${{ needs.set-pre-release-build-output.outputs.build_guid || needs.deploy-release-build.outputs.build_guid }}
+          BUILD_NUMBER: ${{ needs.set-pre-release-build-output.outputs.build_number || needs.deploy-release-build.outputs.build_number }}
+          ARTIFACT_SHA256: ${{ needs.set-pre-release-build-output.outputs.artifact_sha256 || needs.deploy-release-build.outputs.artifact_sha256 }}
           DOWNLOAD_URL: ${{ needs.deploy-pre-release-build.outputs.download_url || needs.deploy-release-build.outputs.download_url }}
       - name: Display deployment job URL
         run: |
@@ -517,9 +517,9 @@ jobs:
           EOF
         env:
           ENVIRONMENT: ${{ inputs.environment }}
-          DEPLOY_REF: ${{ needs.deploy-pre-release-build.outputs.checkout_ref || github.ref }}
-          COMMIT_HASH: ${{ needs.deploy-pre-release-build.outputs.build_version || needs.deploy-release-build.outputs.build_version }}
-          PROJECT_VERSION: ${{ needs.deploy-pre-release-build.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
-          ARTIFACT_SHA256: ${{ needs.deploy-pre-release-build.outputs.artifact_sha256 || needs.deploy-release-build.outputs.artifact_sha256 }}
+          DEPLOY_REF: ${{ needs.set-pre-release-build-output.outputs.checkout_ref || github.ref }}
+          COMMIT_HASH: ${{ needs.set-pre-release-build-output.outputs.build_version || needs.deploy-release-build.outputs.build_version }}
+          PROJECT_VERSION: ${{ needs.set-pre-release-build-output.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
+          ARTIFACT_SHA256: ${{ needs.set-pre-release-build-output.outputs.artifact_sha256 || needs.deploy-release-build.outputs.artifact_sha256 }}
           DEPLOY_CONFIG_TAG: ${{ inputs.deploy_tag }}
 
