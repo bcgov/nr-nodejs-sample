@@ -235,6 +235,7 @@ jobs:
       contents: read
     outputs:
       download_url: ${{ steps.set-download-url.outputs.download_url }}
+    needs: set-deploy-release-build-output
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
