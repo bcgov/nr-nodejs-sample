@@ -154,21 +154,18 @@ jobs:
         env:
           PACKAGE_TAG: ${{ needs.set-pre-release-build-output.outputs.project_version }}
           PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
-  deploy-release-build:
-    name: Trigger deployment
+  set-deploy-release-build-output:
+    name: Set build output
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     environment: ${{ inputs.environment }}
-    permissions:
-      contents: read
-      packages: read
     outputs:
       project_version: ${{ steps.set-tag-output.outputs.project_version }}
       build_guid: ${{ steps.set-tag-output.outputs.build_guid }}
       build_number: ${{ steps.set-tag-output.outputs.build_number }}
       artifact_name: ${{ steps.set-tag-output.outputs.artifact_name }}
       artifact_sha256: ${{ steps.set-tag-output.outputs.artifact_sha256 }}
-      download_url: ${{ steps.set-download-url.outputs.download_url }}
       checkout_ref: ${{ steps.set-tag-output.outputs.checkout_ref }}
       build_version: ${{ steps.set-tag-output.outputs.build_version }}
     steps:
@@ -229,12 +226,21 @@ jobs:
           BROKER_JWT: ${{ secrets.broker_jwt_e985d455_b0ff_470b_8731_e004fcfac915 }}
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
+  deploy-release-build:
+    name: Trigger deployment
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+    outputs:
+      download_url: ${{ steps.set-download-url.outputs.download_url }}
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
             fetch-depth: 0
             fetch-tags: true
-            ref: ${{ steps.set-tag-output.outputs.checkout_ref || github.ref }}
+            ref: ${{ needs.set-deploy-release-build-output.outputs.checkout_ref || github.ref }}
       - name: Set download URL
         id: set-download-url
         run: |
@@ -242,7 +248,7 @@ jobs:
           echo "${DOWNLOAD_URL}"
           echo "download_url=$(echo ${DOWNLOAD_URL})" >> $GITHUB_OUTPUT
         env:
-          PACKAGE_TAG: ${{ steps.set-tag-output.outputs.project_version }}
+          PACKAGE_TAG: ${{ needs.set-deploy-release-build-output.outputs.project_version }}
           PACKAGE_REPO: ${{ env.PACKAGE_REPO }}
   submit-deployment-job:
     name: Submit deployment job
@@ -250,7 +256,8 @@ jobs:
       always() &&
       ((needs.deploy-pre-release-build.result == 'success' && needs.deploy-release-build.result == 'skipped') ||
       (needs.deploy-pre-release-build.result == 'skipped' && needs.deploy-release-build.result == 'success'))
-    needs: [set-pre-release-build-output, deploy-pre-release-build, deploy-release-build]
+    needs: [set-pre-release-build-output, deploy-pre-release-build,
+            set-deploy-release-build-output, deploy-release-build]
     permissions:
       actions: read
       packages: read
@@ -376,10 +383,10 @@ jobs:
 
           rm -f "${JENKINS_RESPONSE_FILE}"
         env:
-          PROJECT_VERSION: ${{ needs.set-pre-release-build-output.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
-          BUILD_GUID: ${{ needs.set-pre-release-build-output.outputs.build_guid || needs.deploy-release-build.outputs.build_guid }}
-          BUILD_NUMBER: ${{ needs.set-pre-release-build-output.outputs.build_number || needs.deploy-release-build.outputs.build_number }}
-          ARTIFACT_SHA256: ${{ needs.set-pre-release-build-output.outputs.artifact_sha256 || needs.deploy-release-build.outputs.artifact_sha256 }}
+          PROJECT_VERSION: ${{ needs.set-pre-release-build-output.outputs.project_version || needs.set-deploy-release-build-output.outputs.project_version }}
+          BUILD_GUID: ${{ needs.set-pre-release-build-output.outputs.build_guid || needs.set-deploy-release-build-output.outputs.build_guid }}
+          BUILD_NUMBER: ${{ needs.set-pre-release-build-output.outputs.build_number || needs.set-deploy-release-build-output.outputs.build_number }}
+          ARTIFACT_SHA256: ${{ needs.set-pre-release-build-output.outputs.artifact_sha256 || needs.set-deploy-release-build-output.outputs.artifact_sha256 }}
           DOWNLOAD_URL: ${{ needs.deploy-pre-release-build.outputs.download_url || needs.deploy-release-build.outputs.download_url }}
       - name: Display deployment job URL
         run: |
@@ -518,8 +525,8 @@ jobs:
         env:
           ENVIRONMENT: ${{ inputs.environment }}
           DEPLOY_REF: ${{ needs.set-pre-release-build-output.outputs.checkout_ref || github.ref }}
-          COMMIT_HASH: ${{ needs.set-pre-release-build-output.outputs.build_version || needs.deploy-release-build.outputs.build_version }}
-          PROJECT_VERSION: ${{ needs.set-pre-release-build-output.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
-          ARTIFACT_SHA256: ${{ needs.set-pre-release-build-output.outputs.artifact_sha256 || needs.deploy-release-build.outputs.artifact_sha256 }}
+          COMMIT_HASH: ${{ needs.set-pre-release-build-output.outputs.build_version || needs.set-deploy-release-build-output.outputs.build_version }}
+          PROJECT_VERSION: ${{ needs.set-pre-release-build-output.outputs.project_version || needs.set-deploy-release-build-output.outputs.project_version }}
+          ARTIFACT_SHA256: ${{ needs.set-pre-release-build-output.outputs.artifact_sha256 || needs.set-deploy-release-build-output.outputs.artifact_sha256 }}
           DEPLOY_CONFIG_TAG: ${{ inputs.deploy_tag }}
 
