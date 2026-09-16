@@ -40,7 +40,8 @@ jobs:
       contents: read
   build-publish:
     name: Build and publish
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     needs: [preflight, test]
     permissions:
       contents: read
