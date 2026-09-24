@@ -40,7 +40,8 @@ jobs:
       contents: read
   build-publish:
     name: Build and publish
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     needs: [preflight, test]
     permissions:
       contents: read
@@ -160,7 +161,7 @@ jobs:
         working-directory: ./
       - name: Send build info
         run: |
-          curl -s POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
+          curl -s -X POST ${{ env.BROKER_URL }}/v1/intention/action/patch \
               -H 'Content-Type: application/json' \
               -H 'X-Broker-Token: '"${BUILD_TOKEN}"'' \
               --retry 2 \

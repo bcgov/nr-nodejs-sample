@@ -18,7 +18,8 @@ env:
 jobs:
   build-dc:
     name: Build deployment config
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
     permissions:
       contents: read
       packages: write
@@ -117,7 +118,7 @@ jobs:
       - name: Send build info
         run: |
           echo "Sending build info for action: $ID"
-          curl -s POST "${{ env.BROKER_URL }}/v1/intention/action/patch" \
+          curl -s -X POST "${{ env.BROKER_URL }}/v1/intention/action/patch" \
             -H 'Content-Type: application/json' \
             -H "X-Broker-Token: ${ACTION_TOKEN_DCBUILD_0}" \
             -d "{\"package\":{\"checksum\": \"sha256:${ARTIFACT_SHA256}\", \"size\": ${ARTIFACT_SIZE}}}"
