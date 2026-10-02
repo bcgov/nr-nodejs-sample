@@ -55,7 +55,7 @@ jobs:
 
   set-check-outputs:
     name: Set check outputs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       can_rebuild: ${{ steps.set-can-rebuild.outputs.can_rebuild }}
     needs: check-release-package
