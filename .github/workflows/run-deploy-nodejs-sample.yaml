@@ -35,7 +35,7 @@ jobs:
 
   find-tag:
     name: Find latest deployment tag
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       deploy_tag: ${{ steps.set_tag.outputs.deploy_tag }}
     steps:
