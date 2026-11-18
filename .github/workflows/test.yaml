@@ -23,3 +23,8 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Simulate test failure for Broker fallback test
+        run: |
+          echo "::error::Intentional test failure: the build must remain blocked despite Broker fallback."
+          exit 1
