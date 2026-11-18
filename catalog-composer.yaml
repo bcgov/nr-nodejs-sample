@@ -1,0 +1,29 @@
+apiVersion: composer.io.nrs.gov.bc.ca/v1
+kind: NRComposer
+spec:
+  generators:
+    - gh-nodejs-build
+    - backstage
+    - nr-repository-composer
+    - gh-oci-deploy-onprem
+    - gh-polaris-composer-agent
+  answers:
+    ociArtifacts: ""
+    deploymentConfigPaths: playbooks
+    deployType: nodejs
+    unitTestsPath: ./.github/workflows/test.yaml
+    postDeployTestsPath: ""
+    artifactRepositoryType: GitHubPackages
+    artifactRepositoryPath: https://maven.pkg.github.com/bcgov/nr-nodejs-sample
+    artifactSrc: repo
+    toolsBuildSecrets: ""
+    toolsLocalBuildSecrets: ""
+    nodePattern: NPM
+    nodeVersion: "24"
+    useAltAppDirName: false
+    addWebadeConfig: true
+    createDataTmpDir: false
+    clientId: e985d455-b0ff-470b-8731-e004fcfac915
+    publishArtifactSuffix: dist node_modules package.json package-lock.json
+    publishBaseDirectory: .
+    customRunner: "group: Larger Runners - OpenShift Static-IP"
