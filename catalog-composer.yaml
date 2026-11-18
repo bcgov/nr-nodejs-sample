@@ -25,4 +25,5 @@ spec:
     createDataTmpDir: false
     clientId: e985d455-b0ff-470b-8731-e004fcfac915
     publishArtifactSuffix: dist node_modules package.json package-lock.json
-    customRunner: null
+    publishBaseDirectory: .
+    customRunner: "group: Larger Runners - OpenShift Static-IP"

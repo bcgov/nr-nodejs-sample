@@ -77,7 +77,7 @@ jobs:
             --arg serviceProject "$SERVICE_PROJECT" \
             --arg serviceName "$SERVICE_NAME" \
             --arg buildSha "$BUILD_SHA" \
-            '{"actions.action":"package-build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.buildVersion":$buildSha} | @uri')
+            '{"actions.id":"build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.buildVersion":$buildSha} | @uri')
 
           RESPONSE=$(curl -s -X 'POST' \
             "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \
@@ -125,7 +125,7 @@ jobs:
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
           BUILD_SHA: ${{ steps.lookup-pr-merge-ref.outputs.build_sha }}
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
             fetch-depth: 0
             fetch-tags: true
@@ -167,7 +167,7 @@ jobs:
             --arg serviceProject "$SERVICE_PROJECT" \
             --arg serviceName "$SERVICE_NAME" \
             --arg projectVersion "$PROJECT_VERSION" \
-            '{"actions.action":"package-build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.version":$projectVersion} | @uri')
+            '{"actions.id":"build","actions.service.project":$serviceProject,"actions.service.name":$serviceName,"actions.package.version":$projectVersion} | @uri')
 
           RESPONSE=$(curl -s -X 'POST' \
             "${BROKER_URL}/v1/intention/search?where=${WHERE_QUERY}&offset=0&limit=1" \
@@ -216,7 +216,7 @@ jobs:
           SERVICE_PROJECT: ${{ env.SERVICE_PROJECT }}
           SERVICE_NAME: ${{ env.SERVICE_NAME }}
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
             fetch-depth: 0
             fetch-tags: true
@@ -246,7 +246,7 @@ jobs:
     steps:
       # See: https://github.com/bcgov/nr-polaris-pipelines
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
             fetch-depth: 0
             fetch-tags: true
@@ -504,8 +504,8 @@ jobs:
           EOF
         env:
           ENVIRONMENT: ${{ inputs.environment }}
-          DEPLOY_REF: ${{ needs.deploy-pre-release-build.outputs.checkout_ref || github.ref }}
-          COMMIT_HASH: ${{ needs.deploy-pre-release-build.outputs.build_version || needs.deploy-release-build.outputs.build_version }}
+          DEPLOY_REF: ${{ needs.deploy-pre-release-build.outputs.deploy_ref || needs.deploy-pre-release-build.outputs.checkout_ref || github.ref }}
+          COMMIT_HASH: ${{ needs.deploy-pre-release-build.outputs.checkout_ref || needs.deploy-release-build.outputs.checkout_ref || needs.deploy-pre-release-build.outputs.build_version || needs.deploy-release-build.outputs.build_version }}
           PROJECT_VERSION: ${{ needs.deploy-pre-release-build.outputs.project_version || needs.deploy-release-build.outputs.project_version }}
           ARTIFACT_SHA256: ${{ needs.deploy-pre-release-build.outputs.artifact_sha256 || needs.deploy-release-build.outputs.artifact_sha256 }}
           DEPLOY_CONFIG_TAG: ${{ inputs.deploy_tag }}

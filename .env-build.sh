@@ -20,6 +20,13 @@ export PROJECT_NAME="oscar-example"
 export SERVICE_NAME="nodejs-sample"
 export PACKAGE_REPO="https://maven.pkg.github.com/bcgov/nr-nodejs-sample"
 
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
 # Non-Maven build configuration (e.g. Node)
-DEFAULT_VERSION="$(jq -r '.version // empty' "$(dirname "${BASH_SOURCE[0]}")/package.json" 2>/dev/null)"
-export VERSION="${VERSION:-${DEFAULT_VERSION:-0.0.0}}"
+# Base version precedence: VERSION env var > package.json > VERSION file > fallback.
+if [[ -z "${VERSION:-}" ]]; then
+  VERSION="$(jq -r '.version // empty' "${SCRIPT_DIR}/package.json" 2>/dev/null || true)"
+  if [[ -z "$VERSION" && -f "${SCRIPT_DIR}/VERSION" ]]; then
+    VERSION="$(head -n 1 "${SCRIPT_DIR}/VERSION" | tr -d '[:space:]')"
+  fi
+fi
+export VERSION="${VERSION:-0.0.0}"
