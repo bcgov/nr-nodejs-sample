@@ -9,7 +9,7 @@ on:
         type: boolean
       url:
         description: "The Broker URL"
-        default: https://broker.io.nrs.gov.bc.ca
+        default: https://broker.example.invalid
         type: string
     secrets:
       token:
